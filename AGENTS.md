@@ -66,6 +66,14 @@ docker build -t crux . && docker run -p 3000:3000 crux
 
 Before committing, run `npm run lint` and `npm run build`; both must pass.
 
+**After every change, redeploy the container** so the maintainer can view and debug the latest version:
+
+```bash
+docker compose up -d --build && curl -fsS http://localhost:3000/api/health
+```
+
+The running container is named `crux` and serves http://localhost:3000.
+
 ## Environment variables
 
 - Template: `.env.example` (committed). Copy to `.env` / `.env.local` for real values — these are git-ignored.
