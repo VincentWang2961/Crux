@@ -14,8 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Crux",
-  description: "Crux",
+  title: "Vincent Wang",
+  description: "Vincent Wang — IT support, service desk and infrastructure support in Perth, WA.",
 };
 
 // viewport-fit=cover enables env(safe-area-inset-*) on notched phones.
@@ -39,7 +39,7 @@ const themeScript = `(function(){try{var d=document.documentElement,m=matchMedia
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="zh-CN"
+      lang="en-GB"
       className={`${geistSans.variable} ${jetbrainsMono.variable} h-full antialiased motion-safe:scroll-smooth`}
       // The theme script adds `dark` / color-scheme before hydration.
       suppressHydrationWarning

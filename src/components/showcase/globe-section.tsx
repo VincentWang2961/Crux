@@ -4,7 +4,7 @@ import { MatrixGlobe } from "./matrix-globe";
 export function GlobeSection() {
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold tracking-tight">服务器节点 Servers</h2>
+      <h2 className="text-lg font-semibold tracking-tight">Servers</h2>
       <div className="flex justify-center">
         <MatrixGlobe />
       </div>

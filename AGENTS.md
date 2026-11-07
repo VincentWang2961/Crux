@@ -6,7 +6,7 @@ Keep it current: when you change structure, scripts, or conventions, update this
 ## Project overview
 
 Crux is a web application built with **Next.js (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui**, deployed as a **Docker** container.
-The product scope is still being defined; the repo currently contains the scaffold only.
+It is Vincent Wang's personal site: a terminal-style hero, CV sections and a server-location globe.
 
 ## Tech stack
 
@@ -90,6 +90,17 @@ Responsive design is **mobile-first, not just scaled down**:
 - **Heading:** its size is fluid, `clamp(2rem, 10vw, 4.5rem)`, so the name fills a phone's width without wrapping.
 
 Intro animation: pure CSS, no JS, and the whole sequence finishes in under 2 s. The `T` timeline at the top of `hero.tsx` sets each element's start time through the `--d` CSS variable. The prompt and heading type in character by character (`.hero-char`). The roles, the intro and the scroll hint fade and rise into place (`.hero-rise`). The caret appears when typing ends and then blinks (`.hero-caret`). The keyframes live in `globals.css`. All of it is turned off under `prefers-reduced-motion`.
+
+## CV sections (middle of the home page)
+
+Between the hero and the globe, `page.tsx` renders About, Experience, Projects, Skills, Education and
+Certifications from `src/components/showcase/cv-sections.tsx`. Each uses the shared `Section` frame
+(`section.tsx`): a mono `$ command` line and the title, in a left column from `md` up, stacked on phones.
+Section bodies are separated by top borders.
+- All copy comes from Vincent's CV and lives in `site-data.ts` (`profile`, `experience`, `projects`,
+  `skillGroups`, `education`, `certifications`). It is in **British English**.
+- The CV's phone number and referees are deliberately **not** published on the site.
+- Keep the look monochrome and quiet: muted labels, mono dates, outline/secondary badges, no colour accents.
 
 ## Theme (light / dark)
 

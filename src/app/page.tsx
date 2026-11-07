@@ -1,9 +1,13 @@
+import {
+  About,
+  Certifications,
+  Education,
+  Experience,
+  Projects,
+  Skills,
+} from "@/components/showcase/cv-sections";
 import { GlobeSection } from "@/components/showcase/globe-section";
-import { PostList } from "@/components/showcase/post-list";
 import { Hero } from "@/components/showcase/hero";
-import { ProjectGrid } from "@/components/showcase/project-grid";
-import { SkillsCard } from "@/components/showcase/skills-card";
-import { Timeline } from "@/components/showcase/timeline";
 
 export default function Home() {
   return (
@@ -11,21 +15,17 @@ export default function Home() {
       <Hero />
       <main
         id="content"
-        className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6"
+        className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-12 px-[max(1.25rem,env(safe-area-inset-left))] py-10 sm:px-10 md:gap-14"
       >
-        <div className="grid gap-6 md:grid-cols-5">
-          <div className="md:col-span-3">
-            <Timeline />
-          </div>
-          <div className="md:col-span-2">
-            <SkillsCard />
-          </div>
-        </div>
-        <ProjectGrid />
-        <PostList />
+        <About />
+        <Experience />
+        <Projects />
+        <Skills />
+        <Education />
+        <Certifications />
         <GlobeSection />
         <footer className="pt-4 text-center text-xs text-muted-foreground">
-          © 2026 {"Vincent Wang"} · Built with Next.js & shadcn/ui
+          © 2026 Vincent Wang · Built with Next.js & shadcn/ui
         </footer>
       </main>
     </>

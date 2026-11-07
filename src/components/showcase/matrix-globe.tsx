@@ -331,7 +331,7 @@ export function MatrixGlobe() {
       ref={canvasRef}
       className="aspect-square w-full max-w-[560px] cursor-grab touch-none select-none active:cursor-grabbing"
       role="img"
-      aria-label={`服务器节点：${SERVER_NODES.map((n) => n.name).join("、")}`}
+      aria-label={`Server locations: ${SERVER_NODES.map((n) => n.name).join(", ")}`}
     />
   );
 }

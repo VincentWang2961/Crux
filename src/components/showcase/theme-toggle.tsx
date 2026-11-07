@@ -32,7 +32,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       variant="outline"
       size="icon"
       className={cn(className)}
-      aria-label="切换深色模式"
+      aria-label="Toggle dark mode"
       onClick={toggle}
     >
       <Sun className="dark:hidden" />
