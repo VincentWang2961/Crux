@@ -113,6 +113,7 @@ Dark mode is the `.dark` class on `<html>` (Tailwind `@custom-variant dark`, tok
   it clears the key instead, so the page goes back to following the OS.
 - `<html>` has `suppressHydrationWarning` because the script changes its class before hydration.
   `viewport.themeColor` tints the mobile browser chrome for each scheme.
+- The dark palette is dark grey, not pure black: `--background` is `oklch(0.235 0 0)`, about `#1e1e1e` (VS Code dark), and cards and muted surfaces step up slightly. If you change the background, keep `themeColor` in sync.
 
 ## Matrix globe (server deployment map)
 
