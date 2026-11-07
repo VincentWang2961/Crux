@@ -1,18 +1,17 @@
 // Placeholder content for the showcase page. Replace with real data later
 // (or move to MDX / a CMS once the blog is implemented).
 
-export const profile = {
+// Hero (first screen). British English copy.
+export const hero = {
   name: "Vincent Wang",
-  initials: "VW",
-  title: "全栈开发者 · Full-stack Developer",
-  location: "上海, 中国",
-  bio: "热爱构建简洁、可靠的 Web 产品。关注前端工程化、用户体验与开发者工具。This is placeholder text for the profile section.",
-  email: "hello@example.com",
+  greeting: "Hi, I'm",
+  roles: ["Software Engineer", "Cloud & Self-hosting", "Open-source Tinkerer"],
+  intro:
+    "I build things for the web and look after a small fleet of servers across Australia and Asia. " +
+    "This site is where I keep my projects, notes and favourite experiments.",
   links: {
     github: "https://github.com/VincentWang2961",
-    website: "https://example.com",
   },
-  available: true,
 };
 
 export const skillGroups = [

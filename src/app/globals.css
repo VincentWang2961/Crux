@@ -11,9 +11,15 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
     "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo,
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", Menlo,
     Consolas, monospace;
   --font-heading: var(--font-sans);
+  --animate-caret: caret 1.1s steps(1, end) infinite;
+  @keyframes caret {
+    50% {
+      opacity: 0;
+    }
+  }
   /* Remap the serif utility so `font-serif` can never introduce a serif face. */
   --font-serif: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -136,5 +142,51 @@
   /* Form controls don't inherit font by default in some browsers. */
   button, input, select, textarea, optgroup {
     font-family: inherit;
+  }
+}
+/*
+ * Hero intro (whole sequence finishes in about 1.8 s).
+ * Each element sets its start time with the `--d` delay; the keyframes are pure CSS,
+ * so they run on the server-rendered HTML with no JS or hydration flash.
+ */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+    filter: blur(4px);
+  }
+}
+@keyframes hero-char {
+  from {
+    opacity: 0;
+    transform: translateY(0.15em);
+  }
+}
+@keyframes hero-show {
+  from {
+    opacity: 0;
+  }
+}
+@layer components {
+  .hero-rise {
+    animation: hero-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s) both;
+  }
+  .hero-char {
+    display: inline-block;
+    white-space: pre;
+    animation: hero-char 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s) both;
+  }
+  /* The caret appears when typing ends, then blinks. */
+  .hero-caret {
+    animation:
+      hero-show 0s var(--d, 0s) both,
+      caret 1.1s steps(1, end) var(--d, 0s) infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-rise,
+    .hero-char,
+    .hero-caret {
+      animation: none;
+    }
   }
 }

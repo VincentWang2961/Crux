@@ -2,13 +2,15 @@
 
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // Stateless toggle: icons switch via the `dark` class, so no hydration mismatch.
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   return (
     <Button
       variant="outline"
       size="icon"
+      className={cn(className)}
       aria-label="切换深色模式"
       onClick={() => document.documentElement.classList.toggle("dark")}
     >

@@ -74,6 +74,20 @@ docker compose up -d --build && curl -fsS http://localhost:3000/api/health
 
 The running container is named `crux` and serves http://localhost:3000.
 
+## Hero (first screen)
+
+`src/components/showcase/hero.tsx`, with copy in `site-data.ts` → `hero`. It fills exactly one viewport
+(`min-h-svh`), and the rest of the page starts at `#content` below it. It is terminal-styled: monospace
+JetBrains Mono (`font-mono`, loaded via `next/font` in `layout.tsx`), a `$ whoami` prompt, and a blinking
+caret. The copy is **British English** (`lang="en-GB"` on the section).
+
+Responsive design is **mobile-first, not just scaled down**:
+- **Phones:** the content block is anchored to the lower part of the screen (the thumb zone). Roles stack as a list, and a dashed divider sits above the intro. Touch targets are 40–44 px. Safe-area insets are respected (`viewportFit: "cover"` in `layout.tsx`).
+- **`sm` and up:** the content block is vertically centred and the roles sit on one row.
+- **Heading:** its size is fluid, `clamp(2rem, 10vw, 4.5rem)`, so the name fills a phone's width without wrapping.
+
+Intro animation: pure CSS, no JS, and the whole sequence finishes in under 2 s. The `T` timeline at the top of `hero.tsx` sets each element's start time through the `--d` CSS variable. The prompt and heading type in character by character (`.hero-char`). The roles, the intro and the scroll hint fade and rise into place (`.hero-rise`). The caret appears when typing ends and then blinks (`.hero-caret`). The keyframes live in `globals.css`. All of it is turned off under `prefers-reduced-motion`.
+
 ## Matrix globe (server deployment map)
 
 Purpose: shows where the maintainer's servers are deployed. Lives at the bottom of the home page.
