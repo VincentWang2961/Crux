@@ -74,6 +74,35 @@ docker compose up -d --build && curl -fsS http://localhost:3000/api/health
 
 The running container is named `crux` and serves http://localhost:3000.
 
+## Matrix globe (server deployment map)
+
+Purpose: shows where the maintainer's servers are deployed. Lives at the bottom of the home page.
+
+| File | Role |
+| --- | --- |
+| `src/components/showcase/matrix-globe.tsx` | Client component, Canvas 2D renderer (no three.js). Style reference: cloudflare.com "Region: Earth" globe, monochrome. Dense land-only dots on a Fibonacci sphere lattice (uniform, no pole artefacts), rim-darkening, drag/inertia/auto-rotate, node badges, labels. Tunables are constants at the top. |
+| `src/components/showcase/globe-section.tsx` | Section wrapper (title only, no card — the globe floats on the page). |
+| `src/lib/site-data.ts` → `SERVER_NODES` | Node list: `id`, `name`, `lat`, `lon`, `label` quadrant (`ne/nw/se/sw`) to keep name tags from overlapping. |
+| `src/lib/land-mask.ts` | Generated 0.5° land/ocean bitmap (Natural Earth 50m, scanline-rasterised); each dot samples its centre against it. Regenerate with `scripts/gen-land-mask.mjs`; never edit by hand. |
+
+Design rules: monochrome only — very light grey sphere (no graticule); land is a
+dense field of small grey dots (no ocean dots) that grow more opaque towards the rim; nodes are
+white badges with a dark border; no country borders; labels are dark pills with white sans-serif
+text.
+Server-only values must not be imported from the `"use client"` file into Server Components — keep
+shared data in `site-data.ts`.
+
+### Planned: links between server nodes (not implemented yet)
+
+Nodes will later be connected by line segments (e.g. replication / network topology). Prepared for:
+- Every node has a stable `id`; links should be declared in `site-data.ts` as
+  `SERVER_LINKS: { from: ServerNode["id"]; to: ServerNode["id"] }[]`.
+- Render links as **great-circle arcs**: slerp between the two node unit vectors, lift the midpoint
+  slightly above the surface (scale by ~1.05–1.15 depending on distance) so arcs read as 3D, and
+  hide/fade segments whose rotated `z <= 0` (back side of the globe).
+- Insert drawing at the `[Future] SERVER_LINKS` comment in `matrix-globe.tsx` — after land dots,
+  before node markers and labels — keeping the white/grey palette (optionally an animated dash).
+
 ## Environment variables
 
 - Template: `.env.example` (committed). Copy to `.env` / `.env.local` for real values — these are git-ignored.
