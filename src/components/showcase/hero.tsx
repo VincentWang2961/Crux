@@ -51,14 +51,15 @@ function Typed({
   );
 }
 
-// First screen: fills exactly one viewport (svh handles mobile browser chrome),
-// content is pushed below it so visitors scroll to see the rest.
+// First screen: at least one *large* viewport tall (lvh = browser toolbars retracted),
+// so the next section never peeks in on iOS Safari, whose toolbars collapse or float
+// over the page. The scroll hint is lifted by (lvh - svh) so it sits just above the
+// toolbar while it is shown; on desktop lvh == svh and that offset is 0.
 //
-// Phone vs desktop: on phones the block is anchored to the lower part of the screen
-// (thumb zone, native "onboarding" feel), roles stack as a list, touch targets are
-// 40px and safe-area insets (notch / home indicator) are respected. From `sm` up,
-// the block is vertically centred and roles sit on one line. The heading size is
-// fluid (10vw, clamped) so it fills the width on any phone without wrapping the name.
+// Phone vs desktop: the block is vertically centred on both (slightly above centre on
+// phones). Roles stack as a list on phones, touch targets are 40px and safe-area insets
+// (notch / home indicator) are respected. From `sm` up roles sit on one line. The heading
+// size is fluid (10vw, clamped) so it fills the width on any phone without wrapping the name.
 export function Hero() {
   const title = `${hero.greeting} ${hero.name}!`;
   const titleEnd = T.title + title.length * T.titleStep;
@@ -66,7 +67,7 @@ export function Hero() {
   return (
     <section
       lang="en-GB"
-      className="relative flex min-h-svh flex-col px-[max(1.25rem,env(safe-area-inset-left))] font-mono sm:px-10"
+      className="relative flex min-h-lvh flex-col px-[max(1.25rem,env(safe-area-inset-left))] font-mono sm:px-10"
     >
       <div
         className="hero-rise flex items-center justify-between pt-[max(1rem,env(safe-area-inset-top))] sm:pt-6"
@@ -76,7 +77,7 @@ export function Hero() {
         <ThemeToggle className="size-10 sm:size-8" />
       </div>
 
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-end gap-5 pb-[12svh] sm:justify-center sm:gap-8 sm:pb-0">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-5 pb-[6svh] sm:justify-center sm:gap-8 sm:pb-0">
         <p className="text-xs text-muted-foreground sm:text-sm" aria-label="$ whoami">
           <Typed text="$ whoami" start={T.prompt} step={T.promptStep} />
         </p>
@@ -125,7 +126,7 @@ export function Hero() {
         href="#content"
         aria-label="Scroll to content"
         style={delay(T.hint)}
-        className="hero-rise mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] flex min-h-11 flex-col items-center justify-center gap-1 px-4 text-xs text-muted-foreground transition-colors hover:text-foreground sm:mb-6"
+        className="hero-rise mx-auto mb-[calc(100lvh-100svh+max(1rem,env(safe-area-inset-bottom)))] flex min-h-11 flex-col items-center justify-center gap-1 px-4 text-xs text-muted-foreground transition-colors hover:text-foreground sm:mb-6"
       >
         scroll
         <ChevronDown className="size-4 animate-bounce motion-reduce:animate-none" />

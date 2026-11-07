@@ -76,17 +76,32 @@ The running container is named `crux` and serves http://localhost:3000.
 
 ## Hero (first screen)
 
-`src/components/showcase/hero.tsx`, with copy in `site-data.ts` → `hero`. It fills exactly one viewport
-(`min-h-svh`), and the rest of the page starts at `#content` below it. It is terminal-styled: monospace
+`src/components/showcase/hero.tsx`, with copy in `site-data.ts` → `hero`. It is at least one *large*
+viewport tall (`min-h-lvh`, i.e. browser toolbars retracted) so the next section never peeks in on iOS
+Safari, whose toolbars collapse or float over the page. The scroll hint's bottom margin adds
+`100lvh - 100svh`, which keeps it above the toolbar while the toolbar is shown (the offset is 0 on desktop).
+The rest of the page starts at `#content` below it. It is terminal-styled: monospace
 JetBrains Mono (`font-mono`, loaded via `next/font` in `layout.tsx`), a `$ whoami` prompt, and a blinking
 caret. The copy is **British English** (`lang="en-GB"` on the section).
 
 Responsive design is **mobile-first, not just scaled down**:
-- **Phones:** the content block is anchored to the lower part of the screen (the thumb zone). Roles stack as a list, and a dashed divider sits above the intro. Touch targets are 40–44 px. Safe-area insets are respected (`viewportFit: "cover"` in `layout.tsx`).
+- **Phones:** the content block is vertically centred, slightly above centre (`pb-[6svh]`). Roles stack as a list, and a dashed divider sits above the intro. Touch targets are 40–44 px. Safe-area insets are respected (`viewportFit: "cover"` in `layout.tsx`).
 - **`sm` and up:** the content block is vertically centred and the roles sit on one row.
 - **Heading:** its size is fluid, `clamp(2rem, 10vw, 4.5rem)`, so the name fills a phone's width without wrapping.
 
 Intro animation: pure CSS, no JS, and the whole sequence finishes in under 2 s. The `T` timeline at the top of `hero.tsx` sets each element's start time through the `--d` CSS variable. The prompt and heading type in character by character (`.hero-char`). The roles, the intro and the scroll hint fade and rise into place (`.hero-rise`). The caret appears when typing ends and then blinks (`.hero-caret`). The keyframes live in `globals.css`. All of it is turned off under `prefers-reduced-motion`.
+
+## Theme (light / dark)
+
+Dark mode is the `.dark` class on `<html>` (Tailwind `@custom-variant dark`, tokens in `globals.css`).
+- **Default follows the OS.** An inline script in `layout.tsx` (`themeScript`) runs before first paint: it
+  applies `dark` when `localStorage["theme"]` is `"dark"`, or when nothing is stored and
+  `prefers-color-scheme: dark` matches. It also sets `color-scheme` and keeps listening for OS changes. It
+  exposes `window.__applyTheme`.
+- **The toggle** (`theme-toggle.tsx`) stores an explicit choice. If the chosen theme equals the OS theme,
+  it clears the key instead, so the page goes back to following the OS.
+- `<html>` has `suppressHydrationWarning` because the script changes its class before hydration.
+  `viewport.themeColor` tints the mobile browser chrome for each scheme.
 
 ## Matrix globe (server deployment map)
 
