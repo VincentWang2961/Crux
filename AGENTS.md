@@ -121,6 +121,18 @@ correctly.
     (`html:has(dialog[open])` in `globals.css`).
   - It closes with Esc, the close button or a click outside the photo. ←/→ and the caption arrows step
     through the photos.
+  - **Open/close transition (FLIP, using the Web Animations API):**
+    - On open, the lightbox image starts exactly over the clicked print, matching its position, size and
+      tilt. It then flies to the centre and straightens over `OPEN_MS`, while the blurred backdrop fades in.
+    - The caption and the close button fade in a moment later.
+    - On close, the photo flies back into its slot over `CLOSE_MS`. If you stepped with ←/→, that is the
+      current photo's slot.
+    - While its photo is open, the print in the spread is hidden, so the two read as one object.
+    - ←/→ steps with a short slide and fade.
+    - Esc goes through the animated close: `onCancel` calls `preventDefault`.
+    - The lightbox image gets its size from the photo's aspect ratio, not from the loaded file. Without
+      that, it lays out at 0 px before load and the FLIP measurement breaks.
+    - Under reduced motion, everything opens and closes instantly.
   - Don't put transforms on the `<dialog>` itself. That would make it the containing block for the fixed
     close button, so animate the `<figure>` instead.
 - **Photos:** real photos are JPGs in `public/photos/`. `next/image` serves them as resized WebP.
