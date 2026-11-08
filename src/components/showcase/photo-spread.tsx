@@ -36,12 +36,14 @@ const LONG_EDGE_REM = 13;
 const TILT = [-6, 4, -3, 7, -5, 3, -7, 5, -2, 6];
 const DROP = [2.5, 6, 1, 5, 3, 7, 1.5, 4.5, 2, 5.5];
 
-// White print border and corner radius as a fraction of the print's width. The
-// thumbnail and the lightbox use the same fractions, so when one is scaled into the
-// other during the transition the border matches exactly (no jump at the end).
-const BORDER = 0.025;
-const RADIUS = 0.014;
-const INNER_RADIUS = 0.006;
+// White print border (px), the same thickness on the print and in the lightbox. In the
+// lightbox it is a box-shadow ring around the photo (outside the box, so it never affects
+// layout). During the transition its thickness and the corner radius are counter-scaled
+// (÷ scale), so on screen the border is always BORDER_PX and matches the print at both
+// ends of the flight.
+const BORDER_PX = 6;
+const PHOTO_RADIUS_PX = 2; // photo corners (print and lightbox)
+const LIGHTBOX_SHADOW = "0 25px 50px -6px rgb(0 0 0 / 0.3), 0 0 0 0 rgb(0 0 0 / 0)";
 
 // Swipe in the lightbox: distance (px) or flick speed (px/ms) that changes photo.
 const SWIPE_DISTANCE = 60;
@@ -55,20 +57,41 @@ const EASE_IN_OUT = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Transform that puts `el` (laid out at its final place) exactly over `from`, including
-// the print's current rotation and hover scale. Both share the photo's aspect ratio, so a
-// uniform scale is enough.
-function transformFrom(from: HTMLElement, el: HTMLElement) {
-  const a = from.getBoundingClientRect(); // axis-aligned box, centre is exact even when rotated
-  const b = el.getBoundingClientRect();
-  const cs = getComputedStyle(from);
+// Lightbox frame styles (shadow + radius) for a given on-screen scale `s`. The border ring
+// and the photo radius are divided by `s` so that, after the scale transform, they are
+// exactly BORDER_PX / PHOTO_RADIUS_PX on screen. `print` = the print's resting shadow
+// (shadow-md, also counter-scaled, with a spread so it starts outside the border).
+function frameStyle(s: number, ring: string, print: boolean) {
+  const px = (v: number) => `${v / s}px`;
+  const drop = print
+    ? `0 ${px(4)} ${px(6)} ${px(BORDER_PX - 1)} rgb(0 0 0 / 0.1), 0 ${px(2)} ${px(4)} ${px(BORDER_PX - 2)} rgb(0 0 0 / 0.1)`
+    : LIGHTBOX_SHADOW;
+  return { boxShadow: `0 0 0 ${px(BORDER_PX)} ${ring}, ${drop}`, borderRadius: px(PHOTO_RADIUS_PX) };
+}
+
+// Keyframe that puts the lightbox photo `frame` (laid out at its final place, untransformed)
+// exactly over the print's photo, including the print's tilt and hover scale. Photo is
+// mapped onto photo (both have the photo's exact aspect ratio), so a uniform scale is exact.
+function keyframeAtPrint(print: HTMLElement, frame: HTMLElement) {
+  const photo = print.querySelector("img") ?? print;
+  const a = photo.getBoundingClientRect(); // axis-aligned box: its centre is exact even when tilted
+  const b = frame.getBoundingClientRect();
+  const cs = getComputedStyle(print);
   const rotate = cs.rotate === "none" ? "0deg" : cs.rotate;
   const scale = cs.scale === "none" ? 1 : parseFloat(cs.scale);
-  const s = (from.offsetWidth * scale) / b.width;
+  // Unrounded layout widths (offsetWidth rounds to whole px, which shows as a tiny jump).
+  const s = (parseFloat(getComputedStyle(photo).width) * scale) / parseFloat(getComputedStyle(frame).width);
   const dx = a.left + a.width / 2 - (b.left + b.width / 2);
   const dy = a.top + a.height / 2 - (b.top + b.height / 2);
-  return `translate(${dx}px, ${dy}px) scale(${s}) rotate(${rotate})`;
+  return {
+    transform: `translate(${dx}px, ${dy}px) scale(${s}) rotate(${rotate})`,
+    ...frameStyle(s, cs.backgroundColor, true),
+  };
 }
+const keyframeAtRest = (print: HTMLElement) => ({
+  transform: "none",
+  ...frameStyle(1, getComputedStyle(print).backgroundColor, false),
+});
 
 // No white flash, no waiting on the network: the photo that flies is the print's own
 // already-loaded thumbnail (same URL, so it comes straight from the browser cache) used
@@ -112,12 +135,6 @@ function ready(img: HTMLImageElement | null | undefined) {
   if (!img) return Promise.resolve();
   return Promise.race([img.decode().catch(() => {}), new Promise((r) => setTimeout(r, 120))]);
 }
-
-const printVars = {
-  "--border": BORDER,
-  "--radius": RADIUS,
-  "--inner-radius": INNER_RADIUS,
-} as CSSProperties;
 
 export function PhotoSpread({ photos }: { photos: Photo[] }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -172,8 +189,8 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
 
     // Park the frame over the print, invisible (the print itself stays on screen), until
     // the cached placeholder can paint. Then swap print for frame and fly.
-    const from = transformFrom(thumb, img);
-    img.style.transform = from;
+    const from = keyframeAtPrint(thumb, img);
+    img.style.transform = from.transform;
     img.style.visibility = "hidden";
     const hidden = chrome();
     hidden.forEach((el) => (el.style.opacity = "0"));
@@ -186,7 +203,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
     if (closingRef.current || activeRef.current !== i) return;
 
     showThumb(i, false);
-    img.animate([{ transform: from, boxShadow: getComputedStyle(thumb).boxShadow }, { transform: "none" }], {
+    img.animate([from, keyframeAtRest(thumb)], {
       duration: OPEN_MS,
       easing: EASE_OUT,
     });
@@ -211,10 +228,10 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
 
     if (thumb && img && !reducedMotion()) {
       dialog.getAnimations({ subtree: true }).forEach((a) => a.finish());
-      const to = transformFrom(thumb, img);
+      const to = keyframeAtPrint(thumb, img);
       const opts = { duration: CLOSE_MS, easing: EASE_IN_OUT, fill: "forwards" } as const;
       const fly = img.animate(
-        [{ transform: "none" }, { transform: to, boxShadow: getComputedStyle(thumb).boxShadow }],
+        [keyframeAtRest(thumb), to],
         opts,
       );
       dialog.animate({ opacity: [1, 0] }, { ...opts, pseudoElement: "::backdrop" });
@@ -303,7 +320,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
 
   return (
     <>
-      <ul style={printVars} className="-mx-[max(1.25rem,env(safe-area-inset-left))] flex snap-x snap-mandatory items-start overflow-x-auto px-[max(1.25rem,env(safe-area-inset-left))] pt-4 pb-12 [scrollbar-width:none] md:relative md:mx-0 md:block md:h-[24rem] md:overflow-visible md:p-0">
+      <ul className="-mx-[max(1.25rem,env(safe-area-inset-left))] flex snap-x snap-mandatory items-start overflow-x-auto px-[max(1.25rem,env(safe-area-inset-left))] pt-4 pb-12 [scrollbar-width:none] md:relative md:mx-0 md:block md:h-[24rem] md:overflow-visible md:p-0">
         {photos.map((p, i) => {
           const ratio = p.width / p.height;
           const w = ratio >= 1 ? LONG_EDGE_REM : LONG_EDGE_REM * ratio;
@@ -318,7 +335,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
             <li
               key={p.src}
               style={style}
-              className="@container relative z-(--z) w-(--w) shrink-0 snap-center not-first:-ml-12 has-[button:hover]:z-50 has-[button:focus-visible]:z-50 max-md:mt-[calc(var(--y)*0.5)] max-md:max-w-[62vw] md:absolute md:top-(--y) md:left-[calc((100%-var(--w))*var(--t))] md:not-first:ml-0"
+              className="relative z-(--z) w-(--w) shrink-0 snap-center not-first:-ml-12 has-[button:hover]:z-50 has-[button:focus-visible]:z-50 max-md:mt-[calc(var(--y)*0.5)] max-md:max-w-[62vw] md:absolute md:top-(--y) md:left-[calc((100%-var(--w))*var(--t))] md:not-first:ml-0"
             >
               <button
                 ref={(el) => {
@@ -336,7 +353,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
                   raise(i);
                 }}
                 aria-label={`Open photo: ${p.place}`}
-                className="block w-full cursor-zoom-in rotate-(--r) rounded-[calc(100cqw*var(--radius))] bg-white p-[calc(100cqw*var(--border))] shadow-md ring-1 ring-black/5 transition-[rotate,scale,box-shadow] duration-300 ease-out outline-none hover:scale-110 hover:rotate-0 hover:shadow-2xl focus-visible:scale-110 focus-visible:rotate-0 focus-visible:shadow-2xl focus-visible:ring-2 focus-visible:ring-ring active:scale-105 motion-reduce:transition-none dark:bg-neutral-200"
+                className="block w-full cursor-zoom-in rotate-(--r) rounded-[3px] bg-white p-1.5 shadow-md ring-1 ring-black/5 transition-[rotate,scale,box-shadow] duration-300 ease-out outline-none hover:scale-110 hover:rotate-0 hover:shadow-2xl focus-visible:scale-110 focus-visible:rotate-0 focus-visible:shadow-2xl focus-visible:ring-2 focus-visible:ring-ring active:scale-105 motion-reduce:transition-none dark:bg-neutral-200"
               >
                 <Image
                   src={p.src}
@@ -345,7 +362,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
                   height={p.height}
                   sizes={`${LONG_EDGE_REM}rem`}
                   draggable={false}
-                  className="block h-auto w-full rounded-[calc(100cqw*var(--inner-radius))] select-none"
+                  className="block h-auto w-full rounded-[2px] select-none"
                 />
               </button>
             </li>
@@ -360,31 +377,31 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
         onKeyDown={onKeyDown}
         onClick={onDialogClick}
         aria-label={current ? current.place : "Photo"}
-        style={printVars}
         className="m-auto max-h-none max-w-none overflow-visible bg-transparent p-0 backdrop:bg-black/30 backdrop:opacity-(--backdrop-o,1) backdrop:backdrop-blur-md"
       >
         {current && (
           // Never transform the <dialog> itself: it would become the containing block for
           // the fixed close button. The transitions animate the image and chrome instead.
-          <figure className="flex flex-col items-center gap-3">
+          <figure className="flex flex-col items-center gap-5">
             <div
               data-lightbox-img
               key={current.src}
-              // Explicit size from the aspect ratio (fits 92vw × 82svh), so the frame is laid
-              // out before any file loads and the open transition can measure it.
-              style={
-                {
-                  "--fw": `min(92vw, calc(82svh * ${current.width / current.height}))`,
-                  aspectRatio: `${current.width} / ${current.height}`,
-                } as CSSProperties
-              }
+              // The photo box itself: explicit size from the aspect ratio (fits 92vw × 82svh,
+              // minus the border ring), so it is laid out before any file loads and the
+              // transition can measure it. The white border is the first box-shadow layer.
+              style={{
+                width: `calc(min(92vw, calc(82svh * ${current.width / current.height})) - ${2 * BORDER_PX}px)`,
+                aspectRatio: `${current.width} / ${current.height}`,
+                borderRadius: PHOTO_RADIUS_PX,
+                boxShadow: `0 0 0 ${BORDER_PX}px var(--print), ${LIGHTBOX_SHADOW}`,
+              }}
               onPointerDown={onSwipeStart}
               onPointerMove={onSwipeMove}
               onPointerUp={onSwipeEnd}
               onPointerCancel={onSwipeEnd}
-              className="box-border w-(--fw) touch-none rounded-[calc(var(--fw)*var(--radius))] bg-white p-[calc(var(--fw)*var(--border))] shadow-2xl select-none dark:bg-neutral-200"
+              className="relative touch-none overflow-hidden bg-white select-none [--print:var(--color-white)] dark:bg-neutral-200 dark:[--print:var(--color-neutral-200)]"
             >
-              <div className="pointer-events-none relative size-full overflow-hidden rounded-[calc(var(--fw)*var(--inner-radius))]">
+              <div className="pointer-events-none absolute inset-0">
                 {placeholder && (
                   // Cached thumbnail (plain <img>: it must reuse the exact URL already loaded).
                   // eslint-disable-next-line @next/next/no-img-element

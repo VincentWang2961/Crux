@@ -142,10 +142,15 @@ correctly.
       print and the frame swap.
     - The lightbox image gets its size from the photo's aspect ratio, not from the loaded file. Without
       that, it lays out at 0 px before load and the FLIP measurement breaks.
-    - The white border and corner radius are fractions of the print's width (`BORDER`, `RADIUS`,
-      `INNER_RADIUS`). The thumbnail uses `cqw`, since each `li` is a `@container`; the lightbox frame uses
-      `--fw`. Scaling one into the other then matches exactly, so the border doesn't jump when the close
-      lands. The box shadow also animates to and from the thumbnail's own shadow.
+    - **Photo is mapped onto photo:** the lightbox frame *is* the photo box, with the exact aspect
+      ratio. The FLIP maps it onto the print's `<img>`, using unrounded computed widths, not
+      `offsetWidth`. This keeps the last frame pixel-exact: a print's border box has a different aspect
+      ratio from its photo, which caused a small jump at the end.
+    - The lightbox's white border is the first `box-shadow` ring, outside the box, so it doesn't affect
+      layout. It is the same `BORDER_PX` (6 px) as the print's padding.
+    - During the transition, the ring, the corner radius and the drop shadow are counter-scaled
+      (`frameStyle`, ÷ scale). On screen the border stays 6 px from start to finish, and it lands
+      exactly on the print's border.
     - **Stacking is dynamic:** the `order` state lists the prints from bottom to top. The print last
       hovered, focused or opened (including by stepping) moves to the top and stays there, so a closed photo
       lands on top of the pile and never slides under its neighbours.
