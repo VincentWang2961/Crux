@@ -224,8 +224,8 @@ export const SERVER_NODES: ServerNode[] = [
   { id: "sydney", name: "Sydney", lat: -33.87, lon: 151.21, label: "se" },
 ];
 
-// Photography & travel (bottom of the home page). Test placeholders for now: drop real
-// photos into public/photos/ and list them here with their pixel size (used for the
+// Photography & travel (bottom of the home page). Drop photos into public/photos/
+// (chmod 644) and list them here with their pixel size (used for the
 // aspect ratio, so portrait, landscape and square shots all lay out correctly).
 export type Photo = {
   src: string;
@@ -238,11 +238,11 @@ export type Photo = {
 
 export const PHOTOS: Photo[] = [
   { src: "/photos/golden-gate-bridge.jpg", alt: "The Golden Gate Bridge seen from a rocky beach, waves breaking over dark boulders", place: "Golden Gate Bridge, San Francisco", width: 2576, height: 1716 },
-  { src: "/photos/test/sydney-harbour.svg", alt: "City skyline at night", place: "Sydney Harbour", date: "Dec 2025", width: 900, height: 1200 },
+  { src: "/photos/osaka-skyline.jpg", alt: "Dense city blocks and a long straight avenue at dusk, seen from high above", place: "Osaka, Japan", width: 1125, height: 1500 },
   { src: "/photos/lake-tahoe.jpg", alt: "Pine trees leaning over clear turquoise water", place: "Lake Tahoe, California", width: 2576, height: 1717 },
-  { src: "/photos/test/singapore-marina.svg", alt: "Skyline under a pink sky", place: "Marina Bay, Singapore", date: "Jul 2025", width: 1200, height: 900 },
-  { src: "/photos/test/blue-mountains.svg", alt: "Layered blue ridgelines", place: "Blue Mountains, NSW", date: "Dec 2025", width: 800, height: 1200 },
-  { src: "/photos/test/rottnest.svg", alt: "Turquoise bay and sand", place: "Rottnest Island, WA", date: "Mar 2026", width: 1000, height: 1000 },
-  { src: "/photos/test/shanghai-bund.svg", alt: "Towers at dusk", place: "The Bund, Shanghai", date: "Feb 2025", width: 900, height: 1200 },
+  { src: "/photos/kyoto-yasaka-pagoda.jpg", alt: "A five-storey wooden pagoda rising above tiled rooftops and green trees", place: "Yasaka Pagoda, Kyoto", width: 2000, height: 1500 },
+  { src: "/photos/shanghai-lujiazui.jpg", alt: "The Oriental Pearl Tower and the Lujiazui skyscrapers under a bright sky", place: "Lujiazui, Shanghai", width: 768, height: 1024 },
+  { src: "/photos/santa-monica-pier.jpg", alt: "The Route 66 End of the Trail sign above a crowd on the pier", place: "Santa Monica Pier, Los Angeles", width: 1086, height: 724 },
+  { src: "/photos/yosemite-half-dome.jpg", alt: "A lone figure silhouetted on a road, facing Half Dome between dark pines", place: "Half Dome, Yosemite", width: 2000, height: 1333 },
   { src: "/photos/hot-creek.jpg", alt: "A creek winding through a rocky valley below the Sierra Nevada", place: "Hot Creek, Eastern Sierra", width: 2576, height: 1717 },
 ];

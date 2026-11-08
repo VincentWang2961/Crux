@@ -162,7 +162,7 @@ correctly.
   - Don't put transforms on the `<dialog>` itself. That would make it the containing block for the fixed
     close button, so animate the `<figure>` instead.
 - **Photos:** real photos are JPGs in `public/photos/`. `next/image` serves them as resized WebP.
-  `public/photos/test/*.svg` are generated placeholders, still being replaced one by one. `date` is optional.
+  `date` is optional.
   - Files must be world-readable (`chmod 644`). The Dockerfile also `chown`s `public/` to the non-root
     `nextjs` user, because uploads often arrive as mode 600, which made the image optimiser return 500.
 
