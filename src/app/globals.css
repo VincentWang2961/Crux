@@ -140,6 +140,10 @@
   html {
     @apply font-sans;
   }
+  /* Lock page scroll while a modal <dialog> (photo lightbox) is open. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
   /* Form controls don't inherit font by default in some browsers. */
   button, input, select, textarea, optgroup {
     font-family: inherit;

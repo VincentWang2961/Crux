@@ -102,6 +102,32 @@ Section bodies are separated by top borders.
 - The CV's phone number and referees are deliberately **not** published on the site.
 - Keep the look monochrome and quiet: muted labels, mono dates, outline/secondary badges, no colour accents.
 
+## Photography & Travel (below the globe)
+
+`photo-section.tsx` wraps `photo-spread.tsx` (a client component) in the shared `Section` frame.
+Photos come from `site-data.ts` → `PHOTOS` (`src`, `alt`, `place`, `date`, `width`, `height`). The
+pixel size sets each print's aspect ratio, so 4:3, 3:4, square and panoramic shots all lay out
+correctly.
+
+- **Spread:** prints are laid out like photos on a table.
+  - Tunables at the top of `photo-spread.tsx`: the long edge is `LONG_EDGE_REM`, and each print's tilt
+    and drop come from the `TILT` and `DROP` arrays.
+  - From `md` up, prints are absolutely positioned across the width and neighbours overlap. Hover or
+    keyboard focus lifts a print to the top, straightens it and scales it up.
+  - On phones it becomes a horizontal swipe strip of the same overlapping prints, with snap scrolling.
+- **Lightbox:** clicking a print opens a native `<dialog>` (`showModal`).
+  - The photo fills most of the screen: up to 92vw by 82svh.
+  - The page behind is blurred through `::backdrop`, and page scroll is locked
+    (`html:has(dialog[open])` in `globals.css`).
+  - It closes with Esc, the close button or a click outside the photo. ←/→ and the caption arrows step
+    through the photos.
+  - Don't put transforms on the `<dialog>` itself. That would make it the containing block for the fixed
+    close button, so animate the `<figure>` instead.
+- **Photos:** real photos are JPGs in `public/photos/`. `next/image` serves them as resized WebP.
+  `public/photos/test/*.svg` are generated placeholders, still being replaced one by one. `date` is optional.
+  - Files must be world-readable (`chmod 644`). The Dockerfile also `chown`s `public/` to the non-root
+    `nextjs` user, because uploads often arrive as mode 600, which made the image optimiser return 500.
+
 ## Theme (light / dark)
 
 Dark mode is the `.dark` class on `<html>` (Tailwind `@custom-variant dark`, tokens in `globals.css`).
