@@ -130,6 +130,16 @@ correctly.
     - While its photo is open, the print in the spread is hidden, so the two read as one object.
     - ←/→ steps with a short slide and fade.
     - Esc goes through the animated close: `onCancel` calls `preventDefault`.
+    - **What flies is the print's own cached thumbnail.** The lightbox shows a placeholder: a plain
+      `<img>` reusing the thumbnail's `currentSrc`. That URL is already loaded, so the photo is visible
+      from the very first frame, with no white box and no waiting on the network.
+    - The full-resolution `next/image` fades in over the placeholder on the native `load` event.
+      Don't use next/image's `onLoad`, which waits for `decode()`.
+    - Full-res files are preloaded on hover, focus and pointer-down, and the ←/→ neighbours are preloaded
+      while the lightbox is open. Preloading uses `getImageProps`, with the same `lightboxSizes()` string
+      as the render, so both resolve to the same URL.
+    - The frame stays invisible over the print until the placeholder can paint, and only then do the
+      print and the frame swap.
     - The lightbox image gets its size from the photo's aspect ratio, not from the loaded file. Without
       that, it lays out at 0 px before load and the FLIP measurement breaks.
     - Under reduced motion, everything opens and closes instantly.

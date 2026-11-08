@@ -9,7 +9,7 @@ import {
   type SyntheticEvent,
 } from "react";
 import { flushSync } from "react-dom";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { Photo } from "@/lib/site-data";
 
@@ -58,9 +58,47 @@ function transformFrom(from: HTMLElement, el: HTMLElement) {
   return `translate(${dx}px, ${dy}px) scale(${s}) rotate(${rotate})`;
 }
 
-// Wait until the large image can paint (or give up quickly and animate anyway).
-function ready(img: HTMLImageElement) {
-  return Promise.race([img.decode().catch(() => {}), new Promise((r) => setTimeout(r, 300))]);
+// No white flash, no waiting on the network: the photo that flies is the print's own
+// already-loaded thumbnail (same URL, so it comes straight from the browser cache) used
+// as a placeholder. The full-resolution file fades in over it once it has loaded, which
+// is usually before the flight even ends, because it is preloaded on hover, focus or
+// touch (and the neighbours are preloaded while the lightbox is open).
+
+// The rendered lightbox width is min(92vw, 82svh × ratio). Matching `sizes` makes the
+// browser pick the right candidate, and preload and render must use the same string.
+const lightboxSizes = (p: Photo) => `min(92vw, ${((82 * p.width) / p.height).toFixed(2)}vh)`;
+
+const preloaded = new Set<string>();
+function preload(p: Photo | undefined) {
+  if (!p || preloaded.has(p.src)) return;
+  preloaded.add(p.src);
+  const { props } = getImageProps({
+    src: p.src,
+    alt: "",
+    width: p.width,
+    height: p.height,
+    sizes: lightboxSizes(p),
+  });
+  const img = new window.Image();
+  img.decoding = "async";
+  if (props.sizes) img.sizes = props.sizes;
+  if (props.srcSet) img.srcset = props.srcSet;
+  img.src = props.src;
+  img.decode().catch(() => {});
+}
+
+// Fade the full-res image in over the placeholder as soon as its file is available.
+function revealWhenLoaded(img: HTMLImageElement | null) {
+  if (!img) return;
+  const show = () => (img.dataset.loaded = "");
+  if (img.complete && img.naturalWidth > 0) show();
+  else img.addEventListener("load", show, { once: true });
+}
+
+// The placeholder is cached, so this resolves almost at once; the timeout is a safety net.
+function ready(img: HTMLImageElement | null | undefined) {
+  if (!img) return Promise.resolve();
+  return Promise.race([img.decode().catch(() => {}), new Promise((r) => setTimeout(r, 120))]);
 }
 
 export function PhotoSpread({ photos }: { photos: Photo[] }) {
@@ -69,10 +107,13 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
   const activeRef = useRef<number | null>(null);
   const closingRef = useRef(false);
   const [active, setActive] = useState<number | null>(null);
+  // currentSrc of the active print's thumbnail, shown under the full-res image.
+  const [placeholder, setPlaceholder] = useState<string | null>(null);
   const n = photos.length;
 
+  // The white photo frame that flies (wraps the placeholder and the full-res image).
   const lightboxImg = () =>
-    dialogRef.current?.querySelector<HTMLImageElement>("[data-lightbox-img]") ?? null;
+    dialogRef.current?.querySelector<HTMLElement>("[data-lightbox-img]") ?? null;
   const chrome = () =>
     Array.from(dialogRef.current?.querySelectorAll<HTMLElement>("[data-lightbox-chrome]") ?? []);
   const showThumb = (i: number | null, visible: boolean) => {
@@ -82,7 +123,15 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
 
   function select(i: number | null) {
     activeRef.current = i;
-    flushSync(() => setActive(i));
+    const thumbImg = i === null ? null : thumbRefs.current[i]?.querySelector("img");
+    flushSync(() => {
+      setActive(i);
+      setPlaceholder(thumbImg?.currentSrc || null);
+    });
+    if (i !== null) {
+      preload(photos[(i + 1) % n]);
+      preload(photos[(i - 1 + n) % n]);
+    }
   }
 
   async function open(i: number) {
@@ -95,14 +144,17 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
     const img = lightboxImg();
     if (!img || reducedMotion()) return;
 
-    // Park the image over the print and keep everything else invisible until it can paint.
+    // Park the frame over the print, invisible (the print itself stays on screen), until
+    // the cached placeholder can paint. Then swap print for frame and fly.
     const from = transformFrom(thumb, img);
     img.style.transform = from;
+    img.style.visibility = "hidden";
     const hidden = chrome();
     hidden.forEach((el) => (el.style.opacity = "0"));
     dialog.style.setProperty("--backdrop-o", "0");
-    await ready(img);
+    await ready(img.querySelector<HTMLImageElement>("[data-placeholder]"));
     img.style.transform = "";
+    img.style.visibility = "";
     hidden.forEach((el) => (el.style.opacity = ""));
     dialog.style.removeProperty("--backdrop-o");
     if (closingRef.current || activeRef.current !== i) return;
@@ -208,6 +260,9 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
                 }}
                 type="button"
                 onClick={() => open(i)}
+                onPointerEnter={() => preload(p)}
+                onPointerDown={() => preload(p)}
+                onFocus={() => preload(p)}
                 aria-label={`Open photo: ${p.place}`}
                 className="block w-full cursor-zoom-in rotate-(--r) rounded-[3px] bg-white p-1.5 shadow-md ring-1 ring-black/5 transition-[rotate,scale,box-shadow] duration-300 ease-out outline-none hover:scale-110 hover:rotate-0 hover:shadow-2xl focus-visible:scale-110 focus-visible:rotate-0 focus-visible:shadow-2xl focus-visible:ring-2 focus-visible:ring-ring active:scale-105 motion-reduce:transition-none dark:bg-neutral-200"
               >
@@ -239,24 +294,44 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
           // Never transform the <dialog> itself: it would become the containing block for
           // the fixed close button. The transitions animate the image and chrome instead.
           <figure className="flex flex-col items-center gap-3">
-            <Image
+            <div
               data-lightbox-img
               key={current.src}
-              src={current.src}
-              alt={current.alt}
-              width={current.width}
-              height={current.height}
-              sizes="92vw"
-              loading="eager"
-              fetchPriority="high"
-              // Explicit size from the aspect ratio (fits 92vw × 82svh), so the box is laid
-              // out before the file loads and the open transition can measure it.
+              // Explicit size from the aspect ratio (fits 92vw × 82svh), so the frame is laid
+              // out before any file loads and the open transition can measure it.
               style={{
                 width: `min(92vw, calc(82svh * ${current.width / current.height}))`,
                 aspectRatio: `${current.width} / ${current.height}`,
               }}
-              className="box-border h-auto rounded-md bg-white object-contain p-1.5 shadow-2xl"
-            />
+              className="box-border rounded-md bg-white p-1.5 shadow-2xl dark:bg-neutral-200"
+            >
+              <div className="relative size-full overflow-hidden rounded-[3px]">
+                {placeholder && (
+                  // Cached thumbnail (plain <img>: it must reuse the exact URL already loaded).
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    data-placeholder
+                    src={placeholder}
+                    alt=""
+                    aria-hidden
+                    decoding="sync"
+                    className="absolute inset-0 size-full object-cover"
+                  />
+                )}
+                <Image
+                  src={current.src}
+                  alt={current.alt}
+                  fill
+                  sizes={lightboxSizes(current)}
+                  loading="eager"
+                  fetchPriority="high"
+                  // Native load / complete (not next/image's onLoad, which waits for decode()):
+                  // a preloaded, cached file is revealed immediately.
+                  ref={revealWhenLoaded}
+                  className="object-cover opacity-0 transition-opacity duration-300 data-loaded:opacity-100"
+                />
+              </div>
+            </div>
             <figcaption
               data-lightbox-chrome
               className="flex items-center gap-3 rounded-full bg-background/80 px-2 py-1 font-mono text-xs text-foreground shadow-sm backdrop-blur">
