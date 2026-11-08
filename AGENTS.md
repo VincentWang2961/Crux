@@ -142,6 +142,17 @@ correctly.
       print and the frame swap.
     - The lightbox image gets its size from the photo's aspect ratio, not from the loaded file. Without
       that, it lays out at 0 px before load and the FLIP measurement breaks.
+    - The white border and corner radius are fractions of the print's width (`BORDER`, `RADIUS`,
+      `INNER_RADIUS`). The thumbnail uses `cqw`, since each `li` is a `@container`; the lightbox frame uses
+      `--fw`. Scaling one into the other then matches exactly, so the border doesn't jump when the close
+      lands. The box shadow also animates to and from the thumbnail's own shadow.
+    - **Stacking is dynamic:** the `order` state lists the prints from bottom to top. The print last
+      hovered, focused or opened (including by stepping) moves to the top and stays there, so a closed photo
+      lands on top of the pile and never slides under its neighbours.
+    - **Swipe:** in the lightbox, drag the photo with touch, pen or mouse. It follows the finger with a
+      slight tilt. Releasing past `SWIPE_DISTANCE`, or after a flick faster than `SWIPE_VELOCITY`, changes
+      photo: swipe left for the next one. Anything less springs back. The frame is `touch-none`, and
+      pointer capture keeps tracking outside the photo.
     - Under reduced motion, everything opens and closes instantly.
   - Don't put transforms on the `<dialog>` itself. That would make it the containing block for the fixed
     close button, so animate the `<figure>` instead.

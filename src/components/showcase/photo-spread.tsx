@@ -6,6 +6,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type SyntheticEvent,
 } from "react";
 import { flushSync } from "react-dom";
@@ -34,6 +35,17 @@ const LONG_EDGE_REM = 13;
 // Deterministic "messy" placement, cycled per print (rotation in deg, vertical offset in rem).
 const TILT = [-6, 4, -3, 7, -5, 3, -7, 5, -2, 6];
 const DROP = [2.5, 6, 1, 5, 3, 7, 1.5, 4.5, 2, 5.5];
+
+// White print border and corner radius as a fraction of the print's width. The
+// thumbnail and the lightbox use the same fractions, so when one is scaled into the
+// other during the transition the border matches exactly (no jump at the end).
+const BORDER = 0.025;
+const RADIUS = 0.014;
+const INNER_RADIUS = 0.006;
+
+// Swipe in the lightbox: distance (px) or flick speed (px/ms) that changes photo.
+const SWIPE_DISTANCE = 60;
+const SWIPE_VELOCITY = 0.4;
 
 // Transition timing.
 const OPEN_MS = 480;
@@ -101,6 +113,12 @@ function ready(img: HTMLImageElement | null | undefined) {
   return Promise.race([img.decode().catch(() => {}), new Promise((r) => setTimeout(r, 120))]);
 }
 
+const printVars = {
+  "--border": BORDER,
+  "--radius": RADIUS,
+  "--inner-radius": INNER_RADIUS,
+} as CSSProperties;
+
 export function PhotoSpread({ photos }: { photos: Photo[] }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -110,6 +128,13 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
   // currentSrc of the active print's thumbnail, shown under the full-res image.
   const [placeholder, setPlaceholder] = useState<string | null>(null);
   const n = photos.length;
+  // Stacking order of the prints, bottom → top. The last print hovered, focused or opened
+  // moves to the top and stays there, like picking a photo up and putting it back on the
+  // pile, so a closed photo lands on top instead of sliding under its neighbours.
+  const [order, setOrder] = useState(() => photos.map((_, i) => i));
+  const raise = (i: number) =>
+    setOrder((o) => (o[o.length - 1] === i ? o : [...o.filter((x) => x !== i), i]));
+  const swipeRef = useRef<{ id: number; x: number; t: number; dx: number } | null>(null);
 
   // The white photo frame that flies (wraps the placeholder and the full-res image).
   const lightboxImg = () =>
@@ -123,6 +148,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
 
   function select(i: number | null) {
     activeRef.current = i;
+    if (i !== null) raise(i);
     const thumbImg = i === null ? null : thumbRefs.current[i]?.querySelector("img");
     flushSync(() => {
       setActive(i);
@@ -160,7 +186,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
     if (closingRef.current || activeRef.current !== i) return;
 
     showThumb(i, false);
-    img.animate([{ transform: from, boxShadow: "0 4px 6px rgb(0 0 0 / 0.1)" }, { transform: "none" }], {
+    img.animate([{ transform: from, boxShadow: getComputedStyle(thumb).boxShadow }, { transform: "none" }], {
       duration: OPEN_MS,
       easing: EASE_OUT,
     });
@@ -187,7 +213,10 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
       dialog.getAnimations({ subtree: true }).forEach((a) => a.finish());
       const to = transformFrom(thumb, img);
       const opts = { duration: CLOSE_MS, easing: EASE_IN_OUT, fill: "forwards" } as const;
-      const fly = img.animate([{ transform: "none" }, { transform: to }], opts);
+      const fly = img.animate(
+        [{ transform: "none" }, { transform: to, boxShadow: getComputedStyle(thumb).boxShadow }],
+        opts,
+      );
       dialog.animate({ opacity: [1, 0] }, { ...opts, pseudoElement: "::backdrop" });
       chrome().forEach((el) => el.animate({ opacity: [1, 0] }, { ...opts, duration: 120 }));
       await fly.finished.catch(() => {});
@@ -205,7 +234,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
     if (activeRef.current !== null) select(null);
   }
 
-  function step(d: number) {
+  function step(d: number, fromOffset = d * 28) {
     const i = activeRef.current;
     if (i === null || closingRef.current) return;
     const next = (i + d + n) % n;
@@ -214,9 +243,46 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
     select(next);
     if (reducedMotion()) return;
     lightboxImg()?.animate(
-      { opacity: [0, 1], transform: [`translateX(${d * 28}px)`, "none"] },
-      { duration: 240, easing: EASE_OUT },
+      { opacity: [0, 1], transform: [`translateX(${fromOffset}px)`, "none"] },
+      { duration: 260, easing: EASE_OUT },
     );
+  }
+
+  // Touch / pen / mouse drag on the photo: it follows the finger horizontally; release
+  // past SWIPE_DISTANCE (or with a quick flick) to go to the next / previous photo,
+  // otherwise it springs back. Swipe left = next, like a photo app.
+  function onSwipeStart(e: ReactPointerEvent<HTMLElement>) {
+    if (closingRef.current || (e.pointerType === "mouse" && e.button !== 0)) return;
+    lightboxImg()?.getAnimations().forEach((a) => a.finish());
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId); // keep tracking outside the photo
+    } catch {}
+    swipeRef.current = { id: e.pointerId, x: e.clientX, t: e.timeStamp, dx: 0 };
+  }
+  function onSwipeMove(e: ReactPointerEvent<HTMLElement>) {
+    const sw = swipeRef.current;
+    const img = lightboxImg();
+    if (!sw || sw.id !== e.pointerId || !img) return;
+    sw.dx = e.clientX - sw.x;
+    img.style.transform = `translateX(${sw.dx}px) rotate(${sw.dx * 0.01}deg)`;
+    img.style.opacity = String(1 - Math.min(Math.abs(sw.dx) / 600, 0.4));
+  }
+  function onSwipeEnd(e: ReactPointerEvent<HTMLElement>) {
+    const sw = swipeRef.current;
+    const img = lightboxImg();
+    if (!sw || sw.id !== e.pointerId || !img) return;
+    swipeRef.current = null;
+    const velocity = Math.abs(sw.dx) / Math.max(e.timeStamp - sw.t, 1);
+    const current = img.style.transform;
+    img.style.transform = "";
+    img.style.opacity = "";
+    if (Math.abs(sw.dx) > SWIPE_DISTANCE || (Math.abs(sw.dx) > 15 && velocity > SWIPE_VELOCITY)) {
+      const d = sw.dx < 0 ? 1 : -1;
+      // The next photo slides in from the side the finger came from.
+      step(d, d * Math.min(Math.abs(sw.dx) + 40, 160));
+    } else if (current && !reducedMotion()) {
+      img.animate({ transform: [current, "none"] }, { duration: 220, easing: EASE_OUT });
+    }
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLDialogElement>) {
@@ -237,7 +303,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
 
   return (
     <>
-      <ul className="-mx-[max(1.25rem,env(safe-area-inset-left))] flex snap-x snap-mandatory items-start overflow-x-auto px-[max(1.25rem,env(safe-area-inset-left))] pt-4 pb-12 [scrollbar-width:none] md:relative md:mx-0 md:block md:h-[24rem] md:overflow-visible md:p-0">
+      <ul style={printVars} className="-mx-[max(1.25rem,env(safe-area-inset-left))] flex snap-x snap-mandatory items-start overflow-x-auto px-[max(1.25rem,env(safe-area-inset-left))] pt-4 pb-12 [scrollbar-width:none] md:relative md:mx-0 md:block md:h-[24rem] md:overflow-visible md:p-0">
         {photos.map((p, i) => {
           const ratio = p.width / p.height;
           const w = ratio >= 1 ? LONG_EDGE_REM : LONG_EDGE_REM * ratio;
@@ -246,13 +312,13 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
             "--t": n > 1 ? i / (n - 1) : 0.5,
             "--y": `${DROP[i % DROP.length]}rem`,
             "--r": `${TILT[i % TILT.length]}deg`,
-            "--z": i + 1,
+            "--z": order.indexOf(i) + 1,
           } as CSSProperties;
           return (
             <li
               key={p.src}
               style={style}
-              className="relative z-(--z) w-(--w) shrink-0 snap-center not-first:-ml-12 has-[button:hover]:z-50 has-[button:focus-visible]:z-50 max-md:mt-[calc(var(--y)*0.5)] max-md:max-w-[62vw] md:absolute md:top-(--y) md:left-[calc((100%-var(--w))*var(--t))] md:not-first:ml-0"
+              className="@container relative z-(--z) w-(--w) shrink-0 snap-center not-first:-ml-12 has-[button:hover]:z-50 has-[button:focus-visible]:z-50 max-md:mt-[calc(var(--y)*0.5)] max-md:max-w-[62vw] md:absolute md:top-(--y) md:left-[calc((100%-var(--w))*var(--t))] md:not-first:ml-0"
             >
               <button
                 ref={(el) => {
@@ -260,11 +326,17 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
                 }}
                 type="button"
                 onClick={() => open(i)}
-                onPointerEnter={() => preload(p)}
+                onPointerEnter={() => {
+                  preload(p);
+                  raise(i);
+                }}
                 onPointerDown={() => preload(p)}
-                onFocus={() => preload(p)}
+                onFocus={() => {
+                  preload(p);
+                  raise(i);
+                }}
                 aria-label={`Open photo: ${p.place}`}
-                className="block w-full cursor-zoom-in rotate-(--r) rounded-[3px] bg-white p-1.5 shadow-md ring-1 ring-black/5 transition-[rotate,scale,box-shadow] duration-300 ease-out outline-none hover:scale-110 hover:rotate-0 hover:shadow-2xl focus-visible:scale-110 focus-visible:rotate-0 focus-visible:shadow-2xl focus-visible:ring-2 focus-visible:ring-ring active:scale-105 motion-reduce:transition-none dark:bg-neutral-200"
+                className="block w-full cursor-zoom-in rotate-(--r) rounded-[calc(100cqw*var(--radius))] bg-white p-[calc(100cqw*var(--border))] shadow-md ring-1 ring-black/5 transition-[rotate,scale,box-shadow] duration-300 ease-out outline-none hover:scale-110 hover:rotate-0 hover:shadow-2xl focus-visible:scale-110 focus-visible:rotate-0 focus-visible:shadow-2xl focus-visible:ring-2 focus-visible:ring-ring active:scale-105 motion-reduce:transition-none dark:bg-neutral-200"
               >
                 <Image
                   src={p.src}
@@ -273,7 +345,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
                   height={p.height}
                   sizes={`${LONG_EDGE_REM}rem`}
                   draggable={false}
-                  className="block h-auto w-full rounded-[2px] select-none"
+                  className="block h-auto w-full rounded-[calc(100cqw*var(--inner-radius))] select-none"
                 />
               </button>
             </li>
@@ -288,6 +360,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
         onKeyDown={onKeyDown}
         onClick={onDialogClick}
         aria-label={current ? current.place : "Photo"}
+        style={printVars}
         className="m-auto max-h-none max-w-none overflow-visible bg-transparent p-0 backdrop:bg-black/30 backdrop:opacity-(--backdrop-o,1) backdrop:backdrop-blur-md"
       >
         {current && (
@@ -299,13 +372,19 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
               key={current.src}
               // Explicit size from the aspect ratio (fits 92vw × 82svh), so the frame is laid
               // out before any file loads and the open transition can measure it.
-              style={{
-                width: `min(92vw, calc(82svh * ${current.width / current.height}))`,
-                aspectRatio: `${current.width} / ${current.height}`,
-              }}
-              className="box-border rounded-md bg-white p-1.5 shadow-2xl dark:bg-neutral-200"
+              style={
+                {
+                  "--fw": `min(92vw, calc(82svh * ${current.width / current.height}))`,
+                  aspectRatio: `${current.width} / ${current.height}`,
+                } as CSSProperties
+              }
+              onPointerDown={onSwipeStart}
+              onPointerMove={onSwipeMove}
+              onPointerUp={onSwipeEnd}
+              onPointerCancel={onSwipeEnd}
+              className="box-border w-(--fw) touch-none rounded-[calc(var(--fw)*var(--radius))] bg-white p-[calc(var(--fw)*var(--border))] shadow-2xl select-none dark:bg-neutral-200"
             >
-              <div className="relative size-full overflow-hidden rounded-[3px]">
+              <div className="pointer-events-none relative size-full overflow-hidden rounded-[calc(var(--fw)*var(--inner-radius))]">
                 {placeholder && (
                   // Cached thumbnail (plain <img>: it must reuse the exact URL already loaded).
                   // eslint-disable-next-line @next/next/no-img-element
