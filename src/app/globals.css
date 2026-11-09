@@ -150,6 +150,17 @@
   }
 }
 /*
+ * Theme switch: the toggle runs a View Transition and reveals the new theme with a
+ * growing clip-path circle on ::view-transition-new(root) (theme-toggle.tsx). Turn off
+ * the default cross-fade so the old snapshot stays put underneath the circle.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/*
  * Hero intro (whole sequence finishes in about 1.8 s).
  * Each element sets its start time with the `--d` delay; the keyframes are pure CSS,
  * so they run on the server-rendered HTML with no JS or hydration flash.

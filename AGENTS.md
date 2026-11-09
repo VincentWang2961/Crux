@@ -175,6 +175,10 @@ Dark mode is the `.dark` class on `<html>` (Tailwind `@custom-variant dark`, tok
   exposes `window.__applyTheme`.
 - **The toggle** (`theme-toggle.tsx`) stores an explicit choice. If the chosen theme equals the OS theme,
   it clears the key instead, so the page goes back to following the OS.
+- **Switch animation:** the toggle is a round button. Clicking it runs `document.startViewTransition`, and the
+  new theme grows out of the button as a `clip-path` circle on `::view-transition-new(root)` until it covers
+  the viewport (`REVEAL_MS`). The default cross-fade is turned off in `globals.css`. Browsers without View
+  Transitions, and reduced motion, switch instantly.
 - `<html>` has `suppressHydrationWarning` because the script changes its class before hydration.
   `viewport.themeColor` tints the mobile browser chrome for each scheme.
 - The dark palette is dark grey, not pure black: `--background` is `oklch(0.235 0 0)`, about `#1e1e1e` (VS Code dark), and cards and muted surfaces step up slightly. If you change the background, keep `themeColor` in sync.
