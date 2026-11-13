@@ -18,14 +18,16 @@ export function PostView({ post }: { post: Post }) {
   const original = post.versions.find((v) => v.lang === post.sourceLang)!;
 
   return (
-    <PostShell>
+    <PostShell
+      crumbs={[{ label: "posts", href: "/posts" }, { label: post.slug }]}
+      back={{ href: "/posts", label: zh ? "全部文章" : "All posts" }}
+    >
       {/* Reading progress (CSS scroll-driven; md and up only). */}
       <div aria-hidden className="read-progress" />
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_13rem] lg:gap-16">
         <article lang={HTML_LANG[post.lang]} className="min-w-0">
           <header className="mb-10 max-w-[68ch]">
-            <BackLink href="/posts" label={zh ? "全部文章" : "All posts"} className="mb-8" />
             <p className="font-mono text-xs text-muted-foreground">
               <time dateTime={post.date}>{formatPostDate(post.date, post.lang)}</time> ·{" "}
               {zh ? `${post.readingMinutes} 分钟阅读` : `${post.readingMinutes} min read`}

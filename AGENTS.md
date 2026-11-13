@@ -111,12 +111,20 @@ Section bodies are separated by top borders.
 so nothing moves between pages.
 - **Padding:** the parent provides the side padding: `max(1.25rem, safe-area)` on phones and
   `sm:px-10` from `sm` up. The bar itself sets the top padding.
-- **Left:** `~/crux`, which links home and is hidden on phones to save room, then the **Posts** pill.
-  - The pill has a book icon and a label, 40 px tall on phones.
-  - It is filled while you are in `/posts`.
-- **Right:** the availability pill and the theme toggle.
-- **Hero call to action:** the hero also has a solid "Read my posts →" button under the intro (`T.cta`),
-  so anyone can find the writing.
+- **Navigation lives in the bar.** There are no extra back buttons under it.
+- **Home (`<SiteBar />`):**
+  - Left: `~/crux`, hidden on phones, then the **Posts** pill. The pill has a book icon and a label,
+    and is 40 px tall on phones.
+  - Right: the availability pill and the theme toggle.
+  - The hero also has a solid "Read my posts →" button under the intro (`T.cta`).
+- **Deeper pages (`<SiteBar crumbs back />`):**
+  - Left: the path as a terminal-style breadcrumb: `~/crux/posts` on the list, and
+    `~/crux/posts/<slug>` on a post.
+    - Each earlier part is a link.
+    - The last part is the current page; on narrow screens it is truncated with an ellipsis.
+  - Right: one labelled back button and the theme toggle.
+    - On `/posts` the button reads "← Back to home".
+    - On a post it reads "← All posts", or "← 全部文章" in Chinese.
 
 ## Posts (blog)
 
@@ -173,10 +181,8 @@ Short articles written in Markdown, kept off the home page. You reach them throu
 - Code, captions and meta text use the mono font.
 
 **Layout**
-- **Back buttons:** labelled buttons, 40 px tall, with an arrow (`BackLink`) for visitors who don't
-  rely on the browser's back button.
-  - On `/posts`: "← Home".
-  - On a post: "← All posts" at the top and "← Back to all posts" at the bottom.
+- **Back buttons:** they live in the site bar. A post also ends with "← Back to all posts" under the
+  licence notice, so readers who reach the end don't have to scroll back up.
 - **Contents sidebar:** from `lg` up, a sticky contents list sits on the right.
   - Scroll-spy marks the section being read (the last heading above 30% of the viewport).
   - A 1 px indicator glides to the active entry.
@@ -184,11 +190,14 @@ Short articles written in Markdown, kept off the home page. You reach them throu
   - It shows only from `md` (48 rem) up. Mobile toolbars made it flicker, so phones don't get it.
   - It is hidden in browsers without scroll-driven animations.
 
-**Repost notice** (`post-copyright.tsx`)
-- Under every post: "© YEAR Vincent Wang. You're welcome to repost or share this article, as long as
-  you credit the author and link to the original."
-- It also has a Chinese version.
-- It shows the full URL and has a "Copy link" button.
+**Licence notice** (`post-copyright.tsx`)
+- Every post is licensed under **CC BY 4.0**, and the notice under each post says so, linking to the
+  licence deed in the post's language:
+  - English: <https://creativecommons.org/licenses/by/4.0/>
+  - Chinese: <https://creativecommons.org/licenses/by/4.0/deed.zh-hans>
+- It invites people to repost, share or adapt the post as long as they credit the author and link to
+  the original.
+- It shows the original's full URL and has a "Copy link" button.
 
 **Image lightbox** (`post-image-zoom.tsx`): the same idea as the home page photo lightbox.
 - **Opening:** post images are focusable buttons. Click, Enter or Space opens a native `<dialog>` with a

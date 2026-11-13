@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { BackLink } from "@/components/posts/back-link";
 import { PostList } from "@/components/posts/post-list";
 import { PostShell } from "@/components/posts/post-shell";
 import { getAllPosts } from "@/lib/posts";
@@ -12,8 +11,7 @@ export const metadata: Metadata = {
 export default async function PostsPage() {
   const posts = await getAllPosts();
   return (
-    <PostShell>
-      <BackLink href="/" label="Home" className="mb-8" />
+    <PostShell crumbs={[{ label: "posts" }]} back={{ href: "/", label: "Back to home" }}>
       <p aria-hidden className="font-mono text-xs text-muted-foreground">
         $ ls ~/posts
       </p>

@@ -38,7 +38,7 @@ export function Hero() {
       className="relative flex min-h-lvh flex-col px-[max(1.25rem,env(safe-area-inset-left))] font-mono sm:px-10"
     >
       <div className="hero-rise relative z-30" style={delay(T.bar)}>
-        <SiteBar current="home" />
+        <SiteBar />
       </div>
 
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-5 pb-[6svh] sm:justify-center sm:gap-8 sm:pb-0">
