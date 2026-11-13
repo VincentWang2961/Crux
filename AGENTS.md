@@ -168,57 +168,96 @@ correctly.
 
 ## Availability (bottom of the home page)
 
-A minimal two-week calendar: the current week plus the next, Monday to Sunday, one row per week.
-Each day shows one of three statuses: `available` (green), `limited` (orange, e.g. "Afternoons only")
-or `unavailable` (red).
+A minimal, GitHub-contribution-style matrix of small squares. There is one column per day, covering
+the current week plus the next (Monday to Sunday, with a small gap between the weeks). There is one
+square per time slot. Each slot has one of three statuses: `available` (green), `limited` (orange) or
+`unavailable` (red).
 
 | File | Role |
 | --- | --- |
-| `src/lib/availability.ts` | Types (`AvailabilityStatus`, `AvailabilityDay`, `AvailabilityWindow`), the `AvailabilitySource` interface, the date helpers, the demo data and `getAvailability()`. |
-| `src/components/showcase/availability-section.tsx` | Server component. It renders the grid at request time: `connection()` inside `<Suspense>`, with a skeleton of the same size. |
-| `src/components/showcase/availability-grid.tsx` | Client grid, the detail line and the legend. |
+| `src/lib/availability.ts` | Types, the `AvailabilitySource` interface, the date and time helpers, the demo data and `getAvailability()`. |
+| `src/components/showcase/availability-section.tsx` | Server component. It renders the matrix at request time: `connection()` inside `<Suspense>`, with a placeholder of about the same size. |
+| `src/components/showcase/availability-grid.tsx` | Client matrix, the detail line and the legend. |
 | `src/app/api/availability/route.ts` | `GET /api/availability` returns the same `AvailabilityWindow` as JSON (`no-store`). |
 
-- **Dates:** dates are plain `YYYY-MM-DD` strings in `AVAILABILITY_TIMEZONE` (`Australia/Perth`), and week
-  boundaries are computed there. Date arithmetic and formatting use UTC, so server and client agree and
-  DST never shifts a day.
-- **Days with no stored entry** show `DEFAULT_STATUS` (`available`).
-- **Look:** keep it minimal, using shapes and colour rather than text.
-  - Colours are the `--avail-*` tokens in `globals.css`: a soft tile fill plus a darker "ink" for the
-    glyph, with low chroma. Light and dark mode each have their own values.
-- **Accessibility (low vision included). Colour is never the only cue:**
-  - Each status also has its own glyph: a full circle for available, a half circle for limited, and a
-    cross for unavailable. Glyphs use `currentColor`, so they survive forced-colours mode.
-  - The grid is a real `<table>` with a caption and full weekday names.
-  - Every day is a button with a full spoken label, for example "Tuesday 17 November: Limited, Afternoons only".
-  - Today has `aria-current="date"` and an outline.
-  - The grid is a single tab stop (roving tabindex). Arrow keys move by a day or a week; Home and End go
-    to the start or end of the week.
-  - The selected or hovered day is repeated below the grid in larger text (`aria-live="polite"`), so
-    the exact answer never depends on decoding a colour.
-  - Past days are dimmed to 55% but stay readable.
-  - Sizes are in rem, so the grid scales with zoom.
-- **Demo data:** `demoSource` repeats a weekly pattern plus a few overrides, laid out relative to the
-  current week, so the demo always looks plausible.
+**Data model**
+- **Storage holds blocks.** An `AvailabilityBlock` has `{ date, start, end, status, note? }`.
+  - Times are local `"HH:MM"`. `end` is exclusive, and `"24:00"` is allowed.
+  - Blocks work like calendar events.
+- **`getAvailability()` samples the blocks into slots.** Days → `slots[]` of `{ start, end, status, note? }`.
+  - **Overlaps:** a slot that several blocks overlap takes the most restrictive status, along with that
+    block's note.
+  - **Uncovered time** is `DEFAULT_STATUS` (`available`).
+  - Because storage holds blocks rather than slots, you can change the slot size or the visible hours
+    without migrating any data.
+
+**Tunables** (in `availability.ts`)
+- `AVAILABILITY_SLOT_HOURS`: 1 or 2. It is currently 1.
+- `AVAILABILITY_DAY_START` and `AVAILABILITY_DAY_END`: currently 08:00 to 22:00, which gives a 14 × 14
+  matrix. `END - START` must be divisible by the slot size.
+- `AVAILABILITY_WEEKS`: currently 2.
+
+**Dates and time**
+- Dates are plain `YYYY-MM-DD` strings in `AVAILABILITY_TIMEZONE` (`Australia/Perth`). "Today", "now"
+  and the week boundaries are computed there.
+- Date arithmetic and formatting use UTC, so the server and the client agree, and DST never shifts a day.
+
+**Look**
+- Keep it minimal, using shapes and colour rather than text.
+- Row labels show every other hour.
+- Today's date number sits in a filled circle.
+- Colours are the `--avail-*` tokens in `globals.css`: a soft fill plus a darker "ink" for the mark,
+  with low chroma. Light and dark mode each have their own values.
+
+**Accessibility (low vision included).** Colour is never the only cue.
+- **Marks:** every status has its own mark inside the square. Available is plain, limited is a diagonal
+  half-fill and unavailable is a cross. The marks use `currentColor`, so they survive forced-colours mode.
+- **Table:** the matrix is a real `<table>`. Time slots are row headers and days are column headers,
+  both with full spoken names, and the table has a caption.
+- **Labels:** every square is a button with a full label, for example
+  "Monday 9 November, 09:00 to 10:00: Unavailable, At work".
+- **Current slot:** it has `aria-current="time"` and an outline. Past slots are dimmed.
+- **Keyboard:** the matrix is a single tab stop (roving tabindex).
+  - ←/→ move by day and ↑/↓ by slot.
+  - Home and End jump to the first or last slot of the day.
+  - Hover and focus scale the square up.
+- **Detail line:** the selected or hovered slot is repeated below in larger text (`aria-live="polite"`).
+  For example: "Tue 17 Nov · 14:00–15:00 · Limited · note".
+- **Week gap:** the gap between the weeks is a `translate-x` (`WEEK_GAP`), not padding or a spacer
+  column. This keeps the columns equal and adds no empty cells for screen readers to announce.
+
+**Demo data:** `demoSource` produces a weekly pattern (working hours, evenings, weekends) plus a few
+overrides, laid out relative to the current week, so the demo always looks plausible.
 
 ### Planned: admin and write API (not implemented yet)
 
-1. **Storage.** Implement `AvailabilitySource.getRange(from, to)` against real storage (for example
-   SQLite or Postgres, a KV store, or an iCal or Google Calendar feed). Point `source` in `availability.ts`
-   at it. The page and `GET` need no other change.
-2. **Write API.** Add `PUT /api/availability` to `route.ts`:
-   - **Auth:** `Authorization: Bearer <AVAILABILITY_ADMIN_TOKEN>`. Add the variable to `.env.example`
-     and to the table below. Never prefix it with `NEXT_PUBLIC_`.
-   - **Body:** `{ "days": AvailabilityDay[] }`. This is an upsert by `date`. `status: null`, or omitting
-     a day, deletes the entry, so that day falls back to `DEFAULT_STATUS`.
-   - **Validation:** `date` must match `YYYY-MM-DD`, `status` must be one of the three values, and
-     `note` must be 80 characters or fewer.
-   - **Response:** `204`, then call `revalidatePath("/")` if any caching is added later.
-   - **Status codes:** `401` for a missing or wrong token, `400` for invalid input.
-   - The source interface then gains `upsert(days)` and `remove(dates)`.
-3. **Admin UI.** Build a protected page, for example `/admin/availability`, that edits the window
-   by tapping a day to cycle its status and adding an optional note. It calls the `PUT` endpoint.
-   Protect it with the same token or a proper auth session.
+1. **Storage.** Implement `AvailabilitySource.getRange(from, to)` against real storage, returning
+   `AvailabilityBlock[]`. This could be SQLite or Postgres, a KV store, or an iCal or Google Calendar
+   feed, whose events map directly to blocks. Point `source` in `availability.ts` at it. The page and
+   `GET` need no other change.
+2. **Write API.** Add `PUT /api/availability` to `route.ts`.
+   - **Auth:** `Authorization: Bearer <AVAILABILITY_ADMIN_TOKEN>`.
+     - Add the variable to `.env.example` and to the table below.
+     - Never prefix it with `NEXT_PUBLIC_`.
+   - **Body:** `{ "date": "YYYY-MM-DD", "blocks": Omit<AvailabilityBlock, "date">[] }`.
+     - This replaces that whole day.
+     - An empty `blocks` array clears the day, so it falls back to `DEFAULT_STATUS`.
+     - To change several days, send `{ "days": [...] }` with the same shape per day.
+   - **Validation:**
+     - `date` must be `YYYY-MM-DD`.
+     - `start` and `end` must be `HH:MM`, on the hour or half hour, with `start < end ≤ 24:00`.
+     - `status` must be one of the three values.
+     - `note` must be 80 characters or fewer.
+     - Blocks within a day must not overlap.
+   - **Responses:**
+     - `204` on success. If any caching is added later, also call `revalidatePath("/")`.
+     - `401` when the token is missing or wrong.
+     - `400` for invalid input.
+   - **Source interface:** it then gains `replaceDay(date, blocks)`.
+3. **Admin UI.** Build a protected page, for example `/admin/availability`, that reuses the matrix.
+   - Click or drag across squares to paint a status, and optionally add a note to a block.
+   - Saving calls `PUT`.
+   - Protect the page with the same token or a proper auth session.
 
 ## Theme (light / dark)
 
