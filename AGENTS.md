@@ -106,15 +106,15 @@ Section bodies are separated by top borders.
 
 ## Posts (blog)
 
-Short articles written in Markdown. The newest three appear on the home page, right after About.
-The full list is at `/posts`, and each post lives at `/posts/<slug>`.
+Short articles written in Markdown, kept off the home page. The hero's top bar has a `posts` link
+(next to `~/crux`) to the list at `/posts`; each post lives at `/posts/<slug>`.
 
 | File | Role |
 | --- | --- |
 | `content/posts/<slug>.md` | One post. A frontmatter block (`title`, `date: YYYY-MM-DD`, `summary`) followed by the Markdown body. The file name is the URL slug. |
 | `public/posts/<slug>/…` | The post's images. Link them as `![alt](/posts/<slug>/file.jpg "Caption")`. |
 | `src/lib/posts.ts` | Loads posts (`getAllPosts`, `getPost`, both `"use cache"`). Parses the frontmatter and renders the Markdown with `marked`. |
-| `src/components/posts/post-list.tsx` | The post rows (date, title, summary, reading time), used on the home page and at `/posts`. |
+| `src/components/posts/post-list.tsx` | The post rows (date, title, summary, reading time) on `/posts`. |
 | `src/components/posts/post-shell.tsx` | Frame for the `/posts` pages: a breadcrumb (`~/crux / posts`), the theme toggle and the footer. |
 | `src/components/posts/post-toc.tsx` | The contents sidebar (client component). |
 | `src/app/posts/page.tsx`, `src/app/posts/[slug]/page.tsx` | The routes. Posts are statically generated through `generateStaticParams`; an unknown slug calls `notFound()`. |

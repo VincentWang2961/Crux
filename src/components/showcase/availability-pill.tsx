@@ -241,7 +241,7 @@ export function AvailabilityPill({ data }: { data: AvailabilityWindow }) {
         <span className="sr-only">Availability now: </span>
         <span>{STATUS[current.status].label}</span>
         {hint && (
-          <span className="hidden text-muted-foreground min-[22rem]:inline">
+          <span className="hidden whitespace-nowrap text-muted-foreground min-[26rem]:inline">
             <span aria-hidden>· </span>
             {hint}
           </span>

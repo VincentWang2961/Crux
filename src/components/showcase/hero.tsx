@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { hero } from "@/lib/site-data";
 import { AvailabilityStatus } from "./availability-status";
@@ -40,7 +41,15 @@ export function Hero() {
         className="hero-rise relative z-30 flex items-center justify-between gap-3 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-6"
         style={delay(T.bar)}
       >
-        <span className="text-xs text-muted-foreground">~/crux</span>
+        <nav aria-label="Site" className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span>~/crux</span>
+          <Link
+            href="/posts"
+            className="-my-2 py-2 underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            posts
+          </Link>
+        </nav>
         <div className="flex items-center gap-2">
           <AvailabilityStatus />
           <ThemeToggle className="size-10 sm:size-8" />

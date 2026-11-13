@@ -9,7 +9,6 @@ import {
 import { GlobeSection } from "@/components/showcase/globe-section";
 import { Hero } from "@/components/showcase/hero";
 import { PhotoSection } from "@/components/showcase/photo-section";
-import { PostsSection } from "@/components/showcase/posts-section";
 
 export default function Home() {
   return (
@@ -20,7 +19,6 @@ export default function Home() {
         className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-12 px-[max(1.25rem,env(safe-area-inset-left))] py-10 sm:px-10 md:gap-14"
       >
         <About />
-        <PostsSection />
         <Experience />
         <Projects />
         <Skills />
