@@ -245,11 +245,20 @@ A deliberately simple page whose only job is editing availability.
     Enter submits immediately.
   - On success the name reads "access granted" and the page goes to `/admin`.
   - Esc, or leaving the field with a password attempt in it, puts the name back.
-  - Feedback: a wrong password after Enter shakes the name (`.name-shake`). Failed attempts made while
-    typing stay silent. A `429` shows "too many attempts" under the name.
+  - **Feedback:** a small hint under the name reports each outcome.
+    - A wrong password after Enter shakes the name (`.name-shake`) and shows "wrong password".
+    - Failed attempts made while typing stay silent.
+    - A `429` shows "too many attempts".
+    - A `5xx`, or an unreachable API, shows "admin login isn't available on this server". This is
+      what you see when `ADMIN_PASSWORD` or `ADMIN_SESSION_SECRET` is missing from that deployment's `.env`.
+  - **Paste:** pasting with nothing focused is routed into the name. Surrounding whitespace in the
+    password is ignored on both sides.
+  - **Input methods:** while an IME is composing (`isComposing` / keyCode 229), keys are left alone, so
+    its Enter commits text instead of submitting. `compositionend` re-runs the update.
   - Input from a CJK input method is NFKC-normalised on both client and server, so a full-width
     "！" or "＠" counts as its ASCII form.
 - How it is built:
+  - The heading is two lines: "Hi, I'm", a `<br>`, then the name.
   - A transparent `<input>` (`tabIndex=-1`, kept off the tab order on purpose) sits over the name, so
     phones get a keyboard on tap.
   - `Typed` and `delay` live in `typed.tsx`, shared by the server hero and this client component.

@@ -17,8 +17,18 @@ import { Typed, delay } from "./typed";
 const PREFIX = "admin@";
 const SUBMIT_DEBOUNCE_MS = 350;
 
-// "denied" = wrong password after Enter (shakes); "limited" = too many attempts (429).
-type State = "idle" | "checking" | "granted" | "denied" | "limited";
+// "denied" = wrong password after Enter (shakes); "limited" = too many attempts (429);
+// "offline" = the login API is unreachable or not configured on this server (503).
+type State = "idle" | "checking" | "granted" | "denied" | "limited" | "offline";
+
+const HINT: Partial<Record<State, string>> = {
+  denied: "wrong password",
+  limited: "too many attempts, try again in a few minutes",
+  offline: "admin login isn't available on this server",
+};
+
+/** What is sent as the password: ASCII forms of full-width input, no stray whitespace. */
+const passwordOf = (text: string) => text.normalize("NFKC").slice(PREFIX.length).trim();
 
 export function EditableName({
   name,
@@ -42,12 +52,12 @@ export function EditableName({
   const isAttempt = (text: string) => text.normalize("NFKC").startsWith(PREFIX);
 
   async function tryLogin(text: string, explicit: boolean) {
-    if (!isAttempt(text) || text.length === PREFIX.length) return;
+    if (!isAttempt(text) || !passwordOf(text)) return;
     setState("checking");
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: text.normalize("NFKC").slice(PREFIX.length) }),
+      body: JSON.stringify({ password: passwordOf(text) }),
     }).catch(() => null);
     if (res?.ok) {
       setState("granted");
@@ -55,6 +65,8 @@ export function EditableName({
       setTimeout(() => router.push("/admin"), 450);
     } else if (res?.status === 429) {
       setState("limited");
+    } else if (!res || res.status >= 500) {
+      setState("offline");
     } else {
       // Silent while typing; a visible "no" only when Enter was pressed.
       setState(explicit ? "denied" : "idle");
@@ -65,8 +77,8 @@ export function EditableName({
     setTouched(true);
     setValue(next);
     if (timer.current) clearTimeout(timer.current);
-    if (state === "denied") setState("idle");
-    if (isAttempt(next) && next.length > PREFIX.length) {
+    if (state === "denied" || state === "offline") setState("idle");
+    if (isAttempt(next) && passwordOf(next)) {
       timer.current = setTimeout(() => tryLogin(next, false), SUBMIT_DEBOUNCE_MS);
     }
   }
@@ -87,8 +99,24 @@ export function EditableName({
       el.focus({ preventScroll: true });
       update(e.key === "Backspace" ? value.slice(0, -1) : value + e.key);
     }
+    // Pasting with nothing focused lands on <body>; route it into the name too.
+    function onPaste(e: ClipboardEvent) {
+      const el = input.current;
+      if (!el || e.target !== document.body) return;
+      const r = el.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      const text = e.clipboardData?.getData("text") ?? "";
+      if (!text) return;
+      e.preventDefault();
+      el.focus({ preventScroll: true });
+      update(value + text.replace(/\s+/g, " "));
+    }
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("paste", onPaste);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("paste", onPaste);
+    };
   }); // re-subscribes each render, so `value` is always current
 
   function onChange(e: ChangeEvent<HTMLInputElement>) {
@@ -96,6 +124,9 @@ export function EditableName({
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    // Leave keys alone while an input method (e.g. Chinese pinyin) is composing: its
+    // Enter commits the text and must not be swallowed.
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     // Caret always at the end, like a terminal line.
     if (["ArrowLeft", "ArrowRight", "Home", "End", "ArrowUp", "ArrowDown"].includes(e.key)) {
       e.preventDefault();
@@ -159,12 +190,12 @@ export function EditableName({
           touched ? "animate-caret motion-reduce:animate-none" : "hero-caret",
         )}
       />
-      {state === "limited" && (
+      {HINT[state] && (
         <span
           role="status"
           className="absolute top-full left-0 mt-1 font-mono text-xs font-normal tracking-normal whitespace-nowrap text-muted-foreground"
         >
-          too many attempts, try again in a few minutes
+          {HINT[state]}
         </span>
       )}
       <input
@@ -173,6 +204,7 @@ export function EditableName({
         aria-label="Name"
         value={value}
         onChange={onChange}
+        onCompositionEnd={(e) => update(e.currentTarget.value)}
         onKeyDown={onKeyDown}
         onFocus={() => {
           const el = input.current;

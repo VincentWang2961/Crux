@@ -23,12 +23,12 @@ export const adminConfigured = () => Boolean(process.env.ADMIN_PASSWORD && secre
 /**
  * Constant-time comparison (hashing first makes the lengths equal). Both sides are
  * NFKC-normalised, so full-width characters from a CJK input method ("！", "＠") match
- * their ASCII forms.
+ * their ASCII forms. Surrounding whitespace (e.g. from a paste) is ignored.
  */
 export function passwordMatches(input: string): boolean {
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected) return false;
-  return timingSafeEqual(sha256(input.normalize("NFKC")), sha256(expected.normalize("NFKC")));
+  return timingSafeEqual(sha256(input.normalize("NFKC").trim()), sha256(expected.normalize("NFKC").trim()));
 }
 
 const sign = (payload: string, key: string) =>

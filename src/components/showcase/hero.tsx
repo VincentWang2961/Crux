@@ -56,7 +56,9 @@ export function Hero() {
           aria-label={title}
           className="text-[clamp(2rem,10vw,4.5rem)] font-bold leading-[1.1] tracking-tight text-balance"
         >
-          <Typed text={hero.greeting} start={T.title} step={T.titleStep} />{" "}
+          <Typed text={hero.greeting} start={T.title} step={T.titleStep} />
+          {/* The name always starts its own line. */}
+          <br />
           {/* The name types in, then stays editable: typing "admin@<password>" over it
               logs in to the admin page (editable-name.tsx). */}
           <EditableName
