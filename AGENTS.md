@@ -6,7 +6,7 @@ Keep it current: when you change structure, scripts, or conventions, update this
 ## Project overview
 
 Crux is a web application built with **Next.js (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui**, deployed as a **Docker** container.
-It is Vincent Wang's personal site: a terminal-style hero, CV sections and a server-location globe.
+It is Vincent Wang's personal site: a terminal-style hero, CV sections, a server-location globe, photos and an availability calendar.
 
 ## Tech stack
 
@@ -165,6 +165,60 @@ correctly.
   `date` is optional.
   - Files must be world-readable (`chmod 644`). The Dockerfile also `chown`s `public/` to the non-root
     `nextjs` user, because uploads often arrive as mode 600, which made the image optimiser return 500.
+
+## Availability (bottom of the home page)
+
+A minimal two-week calendar: the current week plus the next, Monday to Sunday, one row per week.
+Each day shows one of three statuses: `available` (green), `limited` (orange, e.g. "Afternoons only")
+or `unavailable` (red).
+
+| File | Role |
+| --- | --- |
+| `src/lib/availability.ts` | Types (`AvailabilityStatus`, `AvailabilityDay`, `AvailabilityWindow`), the `AvailabilitySource` interface, the date helpers, the demo data and `getAvailability()`. |
+| `src/components/showcase/availability-section.tsx` | Server component. It renders the grid at request time: `connection()` inside `<Suspense>`, with a skeleton of the same size. |
+| `src/components/showcase/availability-grid.tsx` | Client grid, the detail line and the legend. |
+| `src/app/api/availability/route.ts` | `GET /api/availability` returns the same `AvailabilityWindow` as JSON (`no-store`). |
+
+- **Dates:** dates are plain `YYYY-MM-DD` strings in `AVAILABILITY_TIMEZONE` (`Australia/Perth`), and week
+  boundaries are computed there. Date arithmetic and formatting use UTC, so server and client agree and
+  DST never shifts a day.
+- **Days with no stored entry** show `DEFAULT_STATUS` (`available`).
+- **Look:** keep it minimal, using shapes and colour rather than text.
+  - Colours are the `--avail-*` tokens in `globals.css`: a soft tile fill plus a darker "ink" for the
+    glyph, with low chroma. Light and dark mode each have their own values.
+- **Accessibility (low vision included). Colour is never the only cue:**
+  - Each status also has its own glyph: a full circle for available, a half circle for limited, and a
+    cross for unavailable. Glyphs use `currentColor`, so they survive forced-colours mode.
+  - The grid is a real `<table>` with a caption and full weekday names.
+  - Every day is a button with a full spoken label, for example "Tuesday 17 November: Limited, Afternoons only".
+  - Today has `aria-current="date"` and an outline.
+  - The grid is a single tab stop (roving tabindex). Arrow keys move by a day or a week; Home and End go
+    to the start or end of the week.
+  - The selected or hovered day is repeated below the grid in larger text (`aria-live="polite"`), so
+    the exact answer never depends on decoding a colour.
+  - Past days are dimmed to 55% but stay readable.
+  - Sizes are in rem, so the grid scales with zoom.
+- **Demo data:** `demoSource` repeats a weekly pattern plus a few overrides, laid out relative to the
+  current week, so the demo always looks plausible.
+
+### Planned: admin and write API (not implemented yet)
+
+1. **Storage.** Implement `AvailabilitySource.getRange(from, to)` against real storage (for example
+   SQLite or Postgres, a KV store, or an iCal or Google Calendar feed). Point `source` in `availability.ts`
+   at it. The page and `GET` need no other change.
+2. **Write API.** Add `PUT /api/availability` to `route.ts`:
+   - **Auth:** `Authorization: Bearer <AVAILABILITY_ADMIN_TOKEN>`. Add the variable to `.env.example`
+     and to the table below. Never prefix it with `NEXT_PUBLIC_`.
+   - **Body:** `{ "days": AvailabilityDay[] }`. This is an upsert by `date`. `status: null`, or omitting
+     a day, deletes the entry, so that day falls back to `DEFAULT_STATUS`.
+   - **Validation:** `date` must match `YYYY-MM-DD`, `status` must be one of the three values, and
+     `note` must be 80 characters or fewer.
+   - **Response:** `204`, then call `revalidatePath("/")` if any caching is added later.
+   - **Status codes:** `401` for a missing or wrong token, `400` for invalid input.
+   - The source interface then gains `upsert(days)` and `remove(dates)`.
+3. **Admin UI.** Build a protected page, for example `/admin/availability`, that edits the window
+   by tapping a day to cycle its status and adding an optional note. It calls the `PUT` endpoint.
+   Protect it with the same token or a proper auth session.
 
 ## Theme (light / dark)
 

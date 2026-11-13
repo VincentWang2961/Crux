@@ -6,6 +6,7 @@ import {
   Projects,
   Skills,
 } from "@/components/showcase/cv-sections";
+import { AvailabilitySection } from "@/components/showcase/availability-section";
 import { GlobeSection } from "@/components/showcase/globe-section";
 import { Hero } from "@/components/showcase/hero";
 import { PhotoSection } from "@/components/showcase/photo-section";
@@ -26,6 +27,7 @@ export default function Home() {
         <Certifications />
         <GlobeSection />
         <PhotoSection />
+        <AvailabilitySection />
         <footer className="pt-4 text-center text-xs text-muted-foreground">
           © 2026 Vincent Wang · Built with Next.js & shadcn/ui
         </footer>
