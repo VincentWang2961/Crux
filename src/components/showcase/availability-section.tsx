@@ -13,7 +13,7 @@ async function AvailabilityData() {
 
 // Roughly the grid's footprint (14 days by the visible slots), so little jumps when it streams in.
 function AvailabilitySkeleton() {
-  return <div aria-hidden className="aspect-square max-w-lg animate-pulse rounded-md bg-muted/60" />;
+  return <div aria-hidden className="h-52 max-w-2xl animate-pulse rounded-md bg-muted/60" />;
 }
 
 export function AvailabilitySection() {

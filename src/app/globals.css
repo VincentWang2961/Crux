@@ -52,11 +52,8 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --color-avail-ok: var(--avail-ok);
-  --color-avail-ok-ink: var(--avail-ok-ink);
   --color-avail-limited: var(--avail-limited);
-  --color-avail-limited-ink: var(--avail-limited-ink);
   --color-avail-no: var(--avail-no);
-  --color-avail-no-ink: var(--avail-no-ink);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -99,13 +96,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  /* Availability calendar: soft tile fill + darker glyph per status (low chroma). */
-  --avail-ok: oklch(0.9 0.06 150);
-  --avail-ok-ink: oklch(0.48 0.1 150);
-  --avail-limited: oklch(0.91 0.07 70);
-  --avail-limited-ink: oklch(0.55 0.11 60);
-  --avail-no: oklch(0.89 0.05 25);
-  --avail-no-ink: oklch(0.5 0.12 25);
+  /* Availability matrix: colour only, so the statuses also step in lightness
+     (free = faint, busy = strong) and stay distinct in greyscale. Low chroma. */
+  --avail-ok: oklch(0.9 0.07 150);
+  --avail-limited: oklch(0.79 0.1 72);
+  --avail-no: oklch(0.65 0.12 25);
 }
 
 /* Dark mode: VS Code-style dark grey (#1e1e1e), not pure black, softer on the eyes. */
@@ -141,12 +136,9 @@
   --sidebar-accent-foreground: oklch(0.93 0 0);
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.556 0 0);
-  --avail-ok: oklch(0.36 0.05 150);
-  --avail-ok-ink: oklch(0.84 0.1 150);
-  --avail-limited: oklch(0.38 0.055 65);
-  --avail-limited-ink: oklch(0.86 0.1 70);
-  --avail-no: oklch(0.36 0.06 25);
-  --avail-no-ink: oklch(0.82 0.09 25);
+  --avail-ok: oklch(0.42 0.06 150);
+  --avail-limited: oklch(0.55 0.08 70);
+  --avail-no: oklch(0.64 0.085 25);
 }
 
 @layer base {

@@ -51,9 +51,13 @@ export interface AvailabilitySource {
 export const AVAILABILITY_TIMEZONE = "Australia/Perth";
 /** Current week plus the next one. */
 export const AVAILABILITY_WEEKS = 2;
-/** Visible hours (local), and the size of one cell. (END - START) must divide by SLOT_HOURS. */
-export const AVAILABILITY_DAY_START = 8;
-export const AVAILABILITY_DAY_END = 22;
+/**
+ * Hours served (local) and the size of one cell; (END - START) must divide by SLOT_HOURS.
+ * The whole day is served; the grid shows fewer hours on narrow screens (see
+ * `VISIBLE_HOURS` in availability-grid.tsx).
+ */
+export const AVAILABILITY_DAY_START = 0;
+export const AVAILABILITY_DAY_END = 24;
 export const AVAILABILITY_SLOT_HOURS = 1;
 /** Time not covered by any block falls back to this status. */
 export const DEFAULT_STATUS: AvailabilityStatus = "available";
@@ -94,7 +98,14 @@ const RANK: Record<AvailabilityStatus, number> = { available: 0, limited: 1, una
 // ---- Demo data (replace with a real source) ----------------------------------------
 
 type DemoBlock = Omit<AvailabilityBlock, "date">;
+const NIGHT: DemoBlock[] = [
+  { start: "00:00", end: "07:00", status: "unavailable", note: "Asleep" },
+  { start: "07:00", end: "08:00", status: "limited", note: "Early morning" },
+  { start: "22:00", end: "23:00", status: "limited", note: "Late evening" },
+  { start: "23:00", end: "24:00", status: "unavailable", note: "Asleep" },
+];
 const WEEKDAY: DemoBlock[] = [
+  ...NIGHT,
   { start: "09:00", end: "17:00", status: "unavailable", note: "At work" },
   { start: "17:00", end: "19:00", status: "limited", note: "Commuting, messages only" },
 ];
@@ -104,18 +115,19 @@ const DEMO_WEEK: DemoBlock[][] = [
   [...WEEKDAY, { start: "19:00", end: "21:00", status: "unavailable", note: "Gym" }],
   WEEKDAY,
   WEEKDAY,
-  [{ start: "09:00", end: "15:00", status: "unavailable", note: "At work" }, { start: "15:00", end: "18:00", status: "limited" }],
-  [{ start: "10:00", end: "13:00", status: "limited", note: "Out and about" }],
-  [{ start: "14:00", end: "18:00", status: "unavailable", note: "Family time" }],
+  [...NIGHT, { start: "09:00", end: "15:00", status: "unavailable", note: "At work" }, { start: "15:00", end: "18:00", status: "limited" }],
+  [...NIGHT, { start: "10:00", end: "13:00", status: "limited", note: "Out and about" }],
+  [...NIGHT, { start: "14:00", end: "18:00", status: "unavailable", note: "Family time" }],
 ];
 // One-off overrides, keyed by offset from Monday of the current week (replace that day).
 const DEMO_OVERRIDES: Record<number, DemoBlock[]> = {
   9: [{ start: "00:00", end: "24:00", status: "unavailable", note: "Travelling" }],
   10: [
+    ...NIGHT,
     { start: "00:00", end: "12:00", status: "unavailable", note: "Travelling" },
     { start: "12:00", end: "18:00", status: "limited", note: "On the road" },
   ],
-  12: [{ start: "12:00", end: "24:00", status: "unavailable", note: "Away" }],
+  12: [...NIGHT, { start: "12:00", end: "24:00", status: "unavailable", note: "Away" }],
 };
 
 const demoSource: AvailabilitySource = {

@@ -168,66 +168,85 @@ correctly.
 
 ## Availability (bottom of the home page)
 
-A minimal, GitHub-contribution-style matrix of small squares. There is one column per day, covering
-the current week plus the next (Monday to Sunday, with a small gap between the weeks). There is one
-square per time slot. Each slot has one of three statuses: `available` (green), `limited` (orange) or
-`unavailable` (red).
+A minimal, GitHub-contribution-style matrix of small squares, using colour only.
+- **Layout:** one row per day (Mon–Sun, as on GitHub) and one square per time slot.
+- **Statuses:** each slot is `available` (green), `limited` (orange) or `unavailable` (red).
+- **Weeks:** this week is always shown. Next week is folded behind a toggle ("Next week 16–22 Nov").
 
 | File | Role |
 | --- | --- |
 | `src/lib/availability.ts` | Types, the `AvailabilitySource` interface, the date and time helpers, the demo data and `getAvailability()`. |
 | `src/components/showcase/availability-section.tsx` | Server component. It renders the matrix at request time: `connection()` inside `<Suspense>`, with a placeholder of about the same size. |
-| `src/components/showcase/availability-grid.tsx` | Client matrix, the detail line and the legend. |
+| `src/components/showcase/availability-grid.tsx` | Client matrix, the fold, the detail line and the legend. |
 | `src/app/api/availability/route.ts` | `GET /api/availability` returns the same `AvailabilityWindow` as JSON (`no-store`). |
 
 **Data model**
-- **Storage holds blocks.** An `AvailabilityBlock` has `{ date, start, end, status, note? }`.
+- Storage holds **blocks**: `AvailabilityBlock { date, start, end, status, note? }`.
   - Times are local `"HH:MM"`. `end` is exclusive, and `"24:00"` is allowed.
   - Blocks work like calendar events.
-- **`getAvailability()` samples the blocks into slots.** Days → `slots[]` of `{ start, end, status, note? }`.
-  - **Overlaps:** a slot that several blocks overlap takes the most restrictive status, along with that
-    block's note.
-  - **Uncovered time** is `DEFAULT_STATUS` (`available`).
-  - Because storage holds blocks rather than slots, you can change the slot size or the visible hours
-    without migrating any data.
+- `getAvailability()` samples the blocks into slots: each day becomes `slots[]` of `{ start, end, status, note? }`.
+  - A slot overlapped by several blocks takes the most restrictive status, together with that block's note.
+  - Time no block covers is `DEFAULT_STATUS` (`available`).
+- Storage keeps blocks, not slots, so the slot size or hours can change without migrating data.
 
-**Tunables** (in `availability.ts`)
-- `AVAILABILITY_SLOT_HOURS`: 1 or 2. It is currently 1.
-- `AVAILABILITY_DAY_START` and `AVAILABILITY_DAY_END`: currently 08:00 to 22:00, which gives a 14 × 14
-  matrix. `END - START` must be divisible by the slot size.
-- `AVAILABILITY_WEEKS`: currently 2.
+**Tunables**
+- In `availability.ts`:
+  - `AVAILABILITY_SLOT_HOURS` is 1 or 2 (currently 1).
+  - `AVAILABILITY_DAY_START` and `AVAILABILITY_DAY_END` are the hours served, currently 0–24.
+  - `AVAILABILITY_WEEKS` is currently 2.
+- In `availability-grid.tsx`:
+  - `VISIBLE_HOURS` sets the hours shown per breakpoint: phones 08–22, `sm` 07–23, `lg` the whole day.
+    Wider screens therefore use the horizontal space for more hours instead of bigger squares.
+  - `CELL` sets the column width (square plus gap) for each breakpoint. The matrix is
+    `min(100%, label + columns × CELL)` wide, so squares only shrink, never grow.
+  - `EXPAND_MS` and `ROW_STAGGER_MS` time the fold animation.
+
+**Responsive columns**
+- Hidden hour columns use CSS (`hidden sm:table-cell` / `hidden lg:table-cell`), so nothing flashes
+  before hydration.
+- A `useSyncExternalStore` breakpoint hook (server snapshot `base`) only clamps keyboard navigation
+  and the tab stop to the visible hours.
+
+**Fold animation**
+- The next-week wrapper animates `grid-template-rows` from `0fr` to `1fr`, which reaches the content's
+  real height with no measuring.
+- Each row then fades and slides in, staggered by `--row-delay`.
+- The chevron rotates.
+- When closed, the region is `inert`, so it is skipped by Tab and by screen readers.
+- The toggle has `aria-expanded` and `aria-controls`.
+- Reduced motion turns all of this off.
 
 **Dates and time**
-- Dates are plain `YYYY-MM-DD` strings in `AVAILABILITY_TIMEZONE` (`Australia/Perth`). "Today", "now"
-  and the week boundaries are computed there.
-- Date arithmetic and formatting use UTC, so the server and the client agree, and DST never shifts a day.
+- Dates are plain `YYYY-MM-DD` strings in `AVAILABILITY_TIMEZONE` (`Australia/Perth`).
+- "Today", "now" and the week boundaries are computed in that time zone.
+- Date arithmetic and formatting use UTC, so server and client agree and DST never shifts a day.
 
-**Look**
-- Keep it minimal, using shapes and colour rather than text.
-- Row labels show every other hour.
-- Today's date number sits in a filled circle.
-- Colours are the `--avail-*` tokens in `globals.css`: a soft fill plus a darker "ink" for the mark,
-  with low chroma. Light and dark mode each have their own values.
+**Colours**
+- The colours are the `--avail-*` tokens in `globals.css`, with low chroma.
+- There are no marks inside the squares, so the statuses also step in **lightness** and stay distinct in
+  greyscale and for colour-blind readers.
+  - Light mode: free is faint, limited is mid, unavailable is strongest.
+  - Dark mode: free is closest to the background and unavailable is brightest.
+- Keep that ordering if you retune the colours.
 
-**Accessibility (low vision included).** Colour is never the only cue.
-- **Marks:** every status has its own mark inside the square. Available is plain, limited is a diagonal
-  half-fill and unavailable is a cross. The marks use `currentColor`, so they survive forced-colours mode.
-- **Table:** the matrix is a real `<table>`. Time slots are row headers and days are column headers,
-  both with full spoken names, and the table has a caption.
+**Accessibility (low vision included)**
+- **Tables:** each week is a real `<table>`. Days are row headers and times are column headers, both
+  with full spoken names, and each table has a caption.
 - **Labels:** every square is a button with a full label, for example
   "Monday 9 November, 09:00 to 10:00: Unavailable, At work".
-- **Current slot:** it has `aria-current="time"` and an outline. Past slots are dimmed.
-- **Keyboard:** the matrix is a single tab stop (roving tabindex).
-  - ←/→ move by day and ↑/↓ by slot.
-  - Home and End jump to the first or last slot of the day.
+- **Detail line:** the selected or hovered slot is repeated below in larger text
+  (`aria-live="polite"`), so the exact answer never depends on reading a colour.
+- **Current slot:** it has `aria-current="time"` and an outline. Past slots are dimmed. Today's row
+  label is a filled pill.
+- **Keyboard:**
+  - The matrix is a single tab stop (roving tabindex).
+  - ←/→ move by slot, ↑/↓ move by day (into next week when it is open), and Home/End jump to the
+    first or last visible slot.
   - Hover and focus scale the square up.
-- **Detail line:** the selected or hovered slot is repeated below in larger text (`aria-live="polite"`).
-  For example: "Tue 17 Nov · 14:00–15:00 · Limited · note".
-- **Week gap:** the gap between the weeks is a `translate-x` (`WEEK_GAP`), not padding or a spacer
-  column. This keeps the columns equal and adds no empty cells for screen readers to announce.
+- **Sizes** are in rem, so the matrix scales with zoom.
 
-**Demo data:** `demoSource` produces a weekly pattern (working hours, evenings, weekends) plus a few
-overrides, laid out relative to the current week, so the demo always looks plausible.
+**Demo data:** `demoSource` produces a weekly pattern (nights, working hours, evenings, weekends) plus a
+few overrides, relative to the current week, so the demo always looks plausible.
 
 ### Planned: admin and write API (not implemented yet)
 
@@ -254,7 +273,7 @@ overrides, laid out relative to the current week, so the demo always looks plaus
      - `401` when the token is missing or wrong.
      - `400` for invalid input.
    - **Source interface:** it then gains `replaceDay(date, blocks)`.
-3. **Admin UI.** Build a protected page, for example `/admin/availability`, that reuses the matrix.
+3. **Admin UI.** Build a protected page, for example `/admin/availability`, that reuses the matrix, with both weeks open.
    - Click or drag across squares to paint a status, and optionally add a note to a block.
    - Saving calls `PUT`.
    - Protect the page with the same token or a proper auth session.
