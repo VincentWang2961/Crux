@@ -25,6 +25,10 @@ ENV NODE_ENV=production \
 
 RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs
 
+# Writable data dir (availability edits); docker-compose mounts a named volume here.
+ENV AVAILABILITY_DATA_DIR=/app/data
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

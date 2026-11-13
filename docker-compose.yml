@@ -9,3 +9,9 @@ services:
     env_file:
       - path: .env
         required: false
+    volumes:
+      # Availability edits from /admin; survives rebuilds.
+      - crux-data:/app/data
+
+volumes:
+  crux-data:

@@ -55,3 +55,6 @@ logs
 
 # local agent settings (shared config lives in CLAUDE.md / AGENTS.md)
 .claude/settings.local.json
+
+# availability edits written by /admin in local dev
+/data/

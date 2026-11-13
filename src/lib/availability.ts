@@ -9,6 +9,9 @@
 // when the admin page and write API arrive, replace `demoSource` with a real
 // `AvailabilitySource` and nothing else has to change. See "Availability" in AGENTS.md.
 
+import { promises as fs } from "node:fs";
+import path from "node:path";
+
 export type AvailabilityStatus = "available" | "limited" | "unavailable";
 
 /** A stored block. Times are local "HH:MM" in `AVAILABILITY_TIMEZONE`; `end` is exclusive ("24:00" allowed). */
@@ -140,8 +143,92 @@ const demoSource: AvailabilitySource = {
   },
 };
 
-// Swap this for the real source when the admin/API work lands.
-const source: AvailabilitySource = demoSource;
+// ---- File storage (what the admin page writes) ---------------------------------------
+//
+// One JSON file: { "days": { "YYYY-MM-DD": Block[] (without date) } }. A stored day
+// replaces that whole day; days never saved fall back to the demo template above, so the
+// site shows something sensible before the first edit. An empty array is a saved day with
+// no blocks (all `DEFAULT_STATUS`). Lives in AVAILABILITY_DATA_DIR (default ./data), which
+// the Docker setup mounts as a named volume so edits survive rebuilds.
+
+type StoredFile = { days: Record<string, Omit<AvailabilityBlock, "date">[]> };
+
+const dataFile = () =>
+  path.join(process.env.AVAILABILITY_DATA_DIR ?? path.join(process.cwd(), "data"), "availability.json");
+
+async function readStore(): Promise<StoredFile> {
+  try {
+    const parsed = JSON.parse(await fs.readFile(dataFile(), "utf8"));
+    return { days: parsed?.days && typeof parsed.days === "object" ? parsed.days : {} };
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return { days: {} };
+    throw e;
+  }
+}
+
+async function writeStore(store: StoredFile) {
+  const file = dataFile();
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const tmp = `${file}.${process.pid}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(store, null, 2));
+  await fs.rename(tmp, file); // atomic replace
+}
+
+const fileSource: AvailabilitySource = {
+  async getRange(from, to) {
+    const [store, template] = await Promise.all([readStore(), demoSource.getRange(from, to)]);
+    const blocks = template.filter((b) => !(b.date in store.days));
+    for (const [date, own] of Object.entries(store.days)) {
+      if (date >= from && date <= to) for (const b of own) blocks.push({ date, ...b });
+    }
+    return blocks;
+  },
+};
+
+const source: AvailabilitySource = fileSource;
+
+// ---- Writes (admin only; the caller must check the session) -------------------------
+
+export type DayUpdate = { date: string; blocks: Omit<AvailabilityBlock, "date">[] };
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^([01]\d|2[0-3]):(00|30)$|^24:00$/;
+const STATUSES: AvailabilityStatus[] = ["available", "limited", "unavailable"];
+export const NOTE_MAX = 80;
+
+/** Returns an error message, or null when the updates are valid. */
+export function validateUpdates(input: unknown): string | null {
+  if (!Array.isArray(input) || input.length === 0 || input.length > 31) return "days must be a non-empty array (max 31)";
+  for (const day of input as DayUpdate[]) {
+    if (!day || typeof day.date !== "string" || !DATE_RE.test(day.date)) return "invalid date";
+    if (!Array.isArray(day.blocks)) return `${day.date}: blocks must be an array`;
+    const sorted = [...day.blocks].sort((a, b) => (a.start < b.start ? -1 : 1));
+    for (let i = 0; i < sorted.length; i++) {
+      const b = sorted[i];
+      if (!TIME_RE.test(b.start) || !TIME_RE.test(b.end) || b.start >= b.end) return `${day.date}: invalid time range`;
+      if (!STATUSES.includes(b.status)) return `${day.date}: invalid status`;
+      if (b.note !== undefined && (typeof b.note !== "string" || b.note.length > NOTE_MAX)) return `${day.date}: note too long`;
+      if (i > 0 && sorted[i - 1].end > b.start) return `${day.date}: blocks overlap`;
+    }
+  }
+  return null;
+}
+
+/** Replace whole days in storage. Days more than 30 days old are pruned. */
+export async function saveAvailabilityDays(updates: DayUpdate[]) {
+  const store = await readStore();
+  for (const { date, blocks } of updates) {
+    store.days[date] = blocks.map(({ start, end, status, note }) => ({
+      start,
+      end,
+      status,
+      ...(note?.trim() && { note: note.trim() }),
+    }));
+  }
+  const cutoff = addDays(localDateTime(new Date()).date, -30);
+  for (const date of Object.keys(store.days)) if (date < cutoff) delete store.days[date];
+  await writeStore(store);
+}
 
 /**
  * The window shown on the site: today (in Perth) through the same weekday next week

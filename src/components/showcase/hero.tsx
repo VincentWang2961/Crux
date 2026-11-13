@@ -1,8 +1,9 @@
-import type { CSSProperties } from "react";
 import { ChevronDown } from "lucide-react";
 import { hero } from "@/lib/site-data";
 import { AvailabilityStatus } from "./availability-status";
+import { EditableName } from "./editable-name";
 import { ThemeToggle } from "./theme-toggle";
+import { Typed, delay } from "./typed";
 
 // Intro timeline in seconds. Everything is done by about 1.8 s; classes are in globals.css.
 const T = {
@@ -16,41 +17,6 @@ const T = {
   intro: 1.2,
   hint: 1.45,
 };
-
-const delay = (s: number) => ({ "--d": `${s.toFixed(3)}s` }) as CSSProperties;
-
-// Types `text` one character at a time. Words stay unbreakable and real spaces
-// sit between them, so line wrapping is the same as for plain text.
-function Typed({
-  text,
-  start,
-  step,
-  className,
-}: {
-  text: string;
-  start: number;
-  step: number;
-  className?: string;
-}) {
-  let i = 0;
-  const words = text.split(" ");
-  return (
-    <span aria-hidden className={className}>
-      {words.map((word, w) => (
-        <span key={w}>
-          {w > 0 && " "}
-          <span className="inline-block whitespace-nowrap">
-            {[...word].map((ch, c) => (
-              <span key={c} className="hero-char" style={delay(start + (i++ + w) * step)}>
-                {ch}
-              </span>
-            ))}
-          </span>
-        </span>
-      ))}
-    </span>
-  );
-}
 
 // First screen: at least one *large* viewport tall (lvh = browser toolbars retracted),
 // so the next section never peeks in on iOS Safari, whose toolbars collapse or float
@@ -91,19 +57,14 @@ export function Hero() {
           className="text-[clamp(2rem,10vw,4.5rem)] font-bold leading-[1.1] tracking-tight text-balance"
         >
           <Typed text={hero.greeting} start={T.title} step={T.titleStep} />{" "}
-          {/* The name never splits across lines; the caret stays attached to it. */}
-          <span className="whitespace-nowrap">
-            <Typed
-              text={`${hero.name}!`}
-              start={T.title + (hero.greeting.length + 1) * T.titleStep}
-              step={T.titleStep}
-            />
-            <span
-              aria-hidden
-              style={delay(titleEnd)}
-              className="hero-caret ml-[0.15em] inline-block h-[0.85em] w-[0.5em] translate-y-[0.1em] bg-foreground"
-            />
-          </span>
+          {/* The name types in, then stays editable: typing "admin@<password>" over it
+              logs in to the admin page (editable-name.tsx). */}
+          <EditableName
+            name={`${hero.name}!`}
+            start={T.title + (hero.greeting.length + 1) * T.titleStep}
+            step={T.titleStep}
+            caretDelay={titleEnd}
+          />
         </h1>
 
         <ul className="flex flex-col gap-1.5 text-[0.9375rem] text-foreground/80 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2 sm:text-xl">

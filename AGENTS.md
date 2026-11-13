@@ -89,7 +89,7 @@ Responsive design is **mobile-first, not just scaled down**:
 - **`sm` and up:** the content block is vertically centred and the roles sit on one row.
 - **Heading:** its size is fluid, `clamp(2rem, 10vw, 4.5rem)`, so the name fills a phone's width without wrapping.
 
-Intro animation: pure CSS, no JS, and the whole sequence finishes in under 2 s. The `T` timeline at the top of `hero.tsx` sets each element's start time through the `--d` CSS variable. The prompt and heading type in character by character (`.hero-char`). The roles, the intro and the scroll hint fade and rise into place (`.hero-rise`). The caret appears when typing ends and then blinks (`.hero-caret`). The keyframes live in `globals.css`. All of it is turned off under `prefers-reduced-motion`.
+Intro animation: pure CSS, no JS, and the whole sequence finishes in under 2 s. The `T` timeline at the top of `hero.tsx` sets each element's start time through the `--d` CSS variable. The prompt and heading type in character by character (`.hero-char`). The roles, the intro and the scroll hint fade and rise into place (`.hero-rise`). The caret appears when typing ends and then blinks (`.hero-caret`). The keyframes live in `globals.css`. All of it is turned off under `prefers-reduced-motion`. The name stays editable after the intro; it is the hidden way into `/admin` (see Availability → Admin page).
 
 ## CV sections (middle of the home page)
 
@@ -175,7 +175,7 @@ week (for example Sat 14 to Sat 21). This is a rolling window of 8 days.
 
 | File | Role |
 | --- | --- |
-| `src/lib/availability.ts` | Types, the `AvailabilitySource` interface, the date and time helpers, the demo data and `getAvailability()`. |
+| `src/lib/availability.ts` | Types, the `AvailabilitySource` interface, the date and time helpers, the demo template, file storage, `getAvailability()`, `validateUpdates()` and `saveAvailabilityDays()`. |
 | `src/components/showcase/availability-status.tsx` | Server wrapper. It renders the pill at request time, through `connection()` inside `<Suspense>`, so the rest of the hero stays static (the route is partially prerendered). The fallback is an empty pill outline. |
 | `src/components/showcase/availability-pill.tsx` | Client component: the pill, the panel and the timeline bars. |
 | `src/app/api/availability/route.ts` | `GET /api/availability` returns the same `AvailabilityWindow` as JSON (`no-store`). |
@@ -230,35 +230,71 @@ week (for example Sat 14 to Sat 21). This is a rolling window of 8 days.
 **Demo data:** `demoSource` provides a weekly pattern (nights, work, evenings, weekends) plus a few
 overrides, keyed by their offset from today.
 
-### Planned: admin and write API (not implemented yet)
+### Admin page (`/admin`) and write API
 
-1. **Storage.** Implement `AvailabilitySource.getRange(from, to)` against real storage, returning
-   `AvailabilityBlock[]`. This could be SQLite or Postgres, a KV store, or an iCal or Google Calendar
-   feed, whose events map directly to blocks. Point `source` in `availability.ts` at it. The page and
-   `GET` need no other change.
-2. **Write API.** Add `PUT /api/availability` to `route.ts`.
-   - **Auth:** `Authorization: Bearer <AVAILABILITY_ADMIN_TOKEN>`.
-     - Add the variable to `.env.example` and to the table below.
-     - Never prefix it with `NEXT_PUBLIC_`.
-   - **Body:** `{ "date": "YYYY-MM-DD", "blocks": Omit<AvailabilityBlock, "date">[] }`.
-     - This replaces that whole day.
-     - An empty `blocks` array clears the day, so it falls back to `DEFAULT_STATUS`.
-     - To change several days, send `{ "days": [...] }` with the same shape per day.
-   - **Validation:**
-     - `date` must be `YYYY-MM-DD`.
-     - `start` and `end` must be `HH:MM`, on the hour or half hour, with `start < end ≤ 24:00`.
-     - `status` must be one of the three values.
-     - `note` must be 80 characters or fewer.
-     - Blocks within a day must not overlap.
-   - **Responses:**
-     - `204` on success. If any caching is added later, also call `revalidatePath("/")`.
-     - `401` when the token is missing or wrong.
-     - `400` for invalid input.
-   - **Source interface:** it then gains `replaceDay(date, blocks)`.
-3. **Admin UI.** Build a protected page, for example `/admin/availability`, that reuses the timeline bars, with both weeks shown.
-   - Drag along a day's bar to paint a status, and optionally add a note to a block.
-   - Saving calls `PUT`.
-   - Protect the page with the same token or a proper auth session.
+A deliberately simple page whose only job is editing availability.
+
+**Hidden entry from the hero** (`editable-name.tsx`)
+- "Vincent Wang!" in the heading types in with the intro, then stays editable like a terminal line.
+  - You can click the name, or just start typing while the hero is on screen.
+  - The caret always stays at the end.
+  - Space only starts editing once you are already editing, so Space still scrolls the page.
+- Anything typed after `admin@` is shown as `*`.
+- Logging in:
+  - Each change after `admin@` is debounced (`SUBMIT_DEBOUNCE_MS`) and posted to `POST /api/admin/login`.
+    Enter submits immediately.
+  - On success the name reads "access granted" and the page goes to `/admin`.
+  - Esc, or leaving the field with a password attempt in it, puts the name back.
+- How it is built:
+  - A transparent `<input>` (`tabIndex=-1`, kept off the tab order on purpose) sits over the name, so
+    phones get a keyboard on tap.
+  - `Typed` and `delay` live in `typed.tsx`, shared by the server hero and this client component.
+
+**Auth** (`src/lib/admin-auth.ts`)
+- **Password check:** the password is `ADMIN_PASSWORD`, compared on the server only, in constant time.
+  It is never in the repo or the client bundle.
+- **Session cookie:** a successful login sets `crux_admin`, an httpOnly, SameSite=Strict cookie
+  valid for 12 hours.
+  - Its value is `<expiry>.<HMAC-SHA256>`, signed with `ADMIN_SESSION_SECRET`.
+  - It is marked `Secure` whenever the request arrived over HTTPS (directly or via `x-forwarded-proto`).
+- **Re-verification:** `isAdmin()` re-checks the cookie in the `/admin` page and in every write. The
+  `/admin` page reads the cookie inside `<Suspense>` and redirects to `/` without a valid session.
+- **Rate limit:** 30 failed logins per client per 10 minutes, kept in memory, then `429`.
+- **Logout:** `DELETE /api/admin/login`.
+
+**Editor** (`src/components/admin/availability-editor.tsx`)
+- Rows are the 8 days in the window, columns are hours.
+- To paint: pick a brush (a status, plus an optional note of up to 80 characters), then click or drag
+  across hours.
+  - Painting works with mouse, pen or touch.
+  - On a fast drag, every hour skipped within the row is filled in.
+- Changed days are marked. "Save N days" sends them; "discard" reverts them.
+- Notes show in each cell's tooltip and spoken label.
+
+**Write API:** `PUT /api/availability`, admin session required.
+- **Body:** `{ "days": [{ "date": "YYYY-MM-DD", "blocks": [{ "start", "end", "status", "note"? }] }] }`.
+  - Each listed day is replaced whole.
+  - An empty `blocks` array saves a day with no blocks, which is all `DEFAULT_STATUS`.
+- **Validation** (`validateUpdates`):
+  - Dates are `YYYY-MM-DD`.
+  - Times are on the hour or half hour, with `start < end ≤ 24:00`.
+  - Status is one of the three values.
+  - A note is 80 characters or fewer.
+  - Blocks don't overlap.
+  - At most 31 days per request.
+- **Responses:** `204` on success, `401` without a session, `400` for invalid input.
+
+**Storage:** `fileSource` in `availability.ts` reads and writes `availability.json` in
+`AVAILABILITY_DATA_DIR` (default `./data`, which is git-ignored).
+- The file holds `{ days: { "YYYY-MM-DD": Block[] } }`.
+- Writes are atomic: the file is written to a temp file, then renamed.
+- Days more than 30 days old are pruned.
+- A day that was never saved falls back to the demo template, so the site looks sensible before the first edit.
+  To make unsaved days plain `DEFAULT_STATUS` instead, drop the template from `fileSource.getRange`.
+- **Docker:** the image sets `AVAILABILITY_DATA_DIR=/app/data`, owned by `nextjs`.
+  `docker-compose.yml` mounts the named volume `crux-data` there, so edits survive rebuilds.
+- **Swapping storage:** to move to a database later, implement another `AvailabilitySource` plus a
+  save function, then point `source` at it.
 
 ## Theme (light / dark)
 
@@ -315,6 +351,9 @@ Nodes will later be connected by line segments (e.g. replication / network topol
 | Variable | Used by | Purpose |
 | --- | --- | --- |
 | `PORT` | docker compose | Host port mapped to container port 3000 |
+| `ADMIN_PASSWORD` | `/api/admin/login` | Admin password (typed after `admin@` over the hero name). Server-only. |
+| `ADMIN_SESSION_SECRET` | `admin-auth.ts` | At least 32 random characters; signs the admin session cookie. Changing it logs everyone out. |
+| `AVAILABILITY_DATA_DIR` | `availability.ts` | Folder for `availability.json` (default `./data`; `/app/data` in Docker). |
 
 ## Git conventions
 
