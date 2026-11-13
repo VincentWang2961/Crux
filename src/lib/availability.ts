@@ -1,7 +1,7 @@
-// Availability calendar data (bottom section of the home page and GET /api/availability).
+// Availability data (the hero status pill and GET /api/availability).
 //
 // Storage holds time *blocks* (date + start/end + status), like calendar events. The site
-// samples them into a fixed matrix: one column per day, one cell per time slot
+// samples them into fixed time slots per day
 // (`AVAILABILITY_SLOT_HOURS`, 1 or 2 h). Because storage is blocks, not slots, the slot
 // size and visible hours can change without migrating data.
 //
@@ -21,7 +21,7 @@ export type AvailabilityBlock = {
   note?: string;
 };
 
-/** One cell of the matrix. */
+/** One time slot of a day. */
 export type AvailabilitySlot = {
   start: string; // "HH:MM"
   end: string;
@@ -38,7 +38,7 @@ export type AvailabilityWindow = {
   today: string;
   now: string;
   slotHours: number;
-  /** Monday of the current week through Sunday of the last week, in order. */
+  /** Today through the same weekday next week (`AVAILABILITY_DAYS` days), in order. */
   days: AvailabilityDay[];
 };
 
@@ -49,8 +49,8 @@ export interface AvailabilitySource {
 
 /** Vincent is based in Perth; "today", "now" and the week boundaries are computed there. */
 export const AVAILABILITY_TIMEZONE = "Australia/Perth";
-/** Current week plus the next one. */
-export const AVAILABILITY_WEEKS = 2;
+/** Rolling window from today: 8 days = today through the same weekday next week. */
+export const AVAILABILITY_DAYS = 8;
 /**
  * Hours served (local) and the size of one cell; (END - START) must divide by SLOT_HOURS.
  * The whole day is served; the grid shows fewer hours on narrow screens (see
@@ -119,15 +119,15 @@ const DEMO_WEEK: DemoBlock[][] = [
   [...NIGHT, { start: "10:00", end: "13:00", status: "limited", note: "Out and about" }],
   [...NIGHT, { start: "14:00", end: "18:00", status: "unavailable", note: "Family time" }],
 ];
-// One-off overrides, keyed by offset from Monday of the current week (replace that day).
+// One-off overrides, keyed by offset from today (replace that day).
 const DEMO_OVERRIDES: Record<number, DemoBlock[]> = {
-  9: [{ start: "00:00", end: "24:00", status: "unavailable", note: "Travelling" }],
-  10: [
+  3: [{ start: "00:00", end: "24:00", status: "unavailable", note: "Travelling" }],
+  4: [
     ...NIGHT,
     { start: "00:00", end: "12:00", status: "unavailable", note: "Travelling" },
     { start: "12:00", end: "18:00", status: "limited", note: "On the road" },
   ],
-  12: [...NIGHT, { start: "12:00", end: "24:00", status: "unavailable", note: "Away" }],
+  6: [...NIGHT, { start: "12:00", end: "24:00", status: "unavailable", note: "Away" }],
 };
 
 const demoSource: AvailabilitySource = {
@@ -144,16 +144,16 @@ const demoSource: AvailabilitySource = {
 const source: AvailabilitySource = demoSource;
 
 /**
- * The matrix shown on the site: Monday of the current week (in Perth) for
- * `AVAILABILITY_WEEKS` weeks, one slot per `AVAILABILITY_SLOT_HOURS` between
+ * The window shown on the site: today (in Perth) through the same weekday next week
+ * (`AVAILABILITY_DAYS` days), one slot per `AVAILABILITY_SLOT_HOURS` between
  * `AVAILABILITY_DAY_START` and `AVAILABILITY_DAY_END`. A slot overlapped by several
  * blocks takes the most restrictive status (with that block's note); uncovered time is
  * `DEFAULT_STATUS`. Call at request time (after `connection()`): it depends on the clock.
  */
 export async function getAvailability(nowDate = new Date()): Promise<AvailabilityWindow> {
   const { date: today, time: now } = localDateTime(nowDate);
-  const from = addDays(today, -weekdayIndex(today));
-  const to = addDays(from, AVAILABILITY_WEEKS * 7 - 1);
+  const from = today;
+  const to = addDays(from, AVAILABILITY_DAYS - 1);
   const blocks = await source.getRange(from, to);
 
   const days: AvailabilityDay[] = [];

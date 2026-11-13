@@ -16,7 +16,7 @@ import type {
 import { cn } from "@/lib/utils";
 
 // Status pill in the hero bar: the answer first ("Unavailable · free 19:00"), the detail
-// on demand. Clicking it unfolds a panel with this week and next as free/busy timeline
+// on demand. Clicking it unfolds a panel with the coming week (today through the same weekday next week) as free/busy timeline
 // bars (one per day, contiguous time merged into segments, like Outlook / Google
 // Calendar's scheduling views).
 
@@ -147,23 +147,19 @@ export function AvailabilityPill({ data }: { data: AvailabilityWindow }) {
   const shown = hovered ?? selected;
   const shownSeg = days[shown.day][shown.seg];
 
-  function week(from: number, title: string) {
-    const range = shortRange(dates[from], dates[from + 6]);
+  // One rolling list: today through the same weekday next week.
+  function rows() {
+    const last = dates.length - 1;
     return (
-      <section aria-label={`${title}, ${longDate(dates[from])} to ${longDate(dates[from + 6])}`}>
-        <h3 className="mb-1.5 flex items-baseline justify-between font-mono text-[0.6875rem] text-muted-foreground">
-          <span className="text-foreground">{title}</span>
-          <span aria-hidden>{range}</span>
-        </h3>
+      <section aria-label={`${longDate(dates[0])} to ${longDate(dates[last])}`}>
         <ul className="flex flex-col gap-0.5">
-          {days.slice(from, from + 7).map((segs, r) => {
-            const day = from + r;
+          {days.map((segs, day) => {
             const date = dates[day];
             const isToday = date === today;
             return (
               <li
                 key={date}
-                style={{ "--row-delay": `${(day + 2) * ROW_STAGGER_MS}ms` } as CSSProperties}
+                style={{ "--row-delay": `${(day + 1) * ROW_STAGGER_MS}ms` } as CSSProperties}
                 className="grid -translate-y-0.5 grid-cols-[3.25rem_minmax(0,1fr)] items-center opacity-0 transition-[opacity,translate] delay-(--row-delay) duration-300 ease-out group-data-open:translate-y-0 group-data-open:opacity-100 motion-reduce:transition-none"
               >
                 <span
@@ -267,8 +263,11 @@ export function AvailabilityPill({ data }: { data: AvailabilityWindow }) {
         )}
       >
         <div className="flex flex-col gap-4">
-          <p className="font-mono text-[0.6875rem] text-muted-foreground">
-            {place} · {now}
+          <p className="flex items-baseline justify-between font-mono text-[0.6875rem] text-muted-foreground">
+            <span>
+              {place} · {now}
+            </span>
+            <span aria-hidden>{shortRange(dates[0], dates[dates.length - 1])}</span>
           </p>
 
           <div className="flex flex-col gap-3">
@@ -283,8 +282,7 @@ export function AvailabilityPill({ data }: { data: AvailabilityWindow }) {
                 ))}
               </span>
             </div>
-            {week(0, "This week")}
-            {days.length >= 14 && week(7, "Next week")}
+            {rows()}
           </div>
 
           {/* Selected or hovered segment in full words: the exact answer without decoding colours. */}

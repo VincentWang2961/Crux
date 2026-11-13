@@ -170,7 +170,8 @@ correctly.
 
 The hero's top bar holds a status pill next to the theme toggle. It answers first, with the current
 status and the next change, for example "● Unavailable · free 08:00" or "● Available · until 17:00".
-Clicking the pill unfolds a panel that shows this week and next week.
+Clicking the pill unfolds a panel that shows the coming week, from today through the same weekday next
+week (for example Sat 14 to Sat 21). This is a rolling window of 8 days.
 
 | File | Role |
 | --- | --- |
@@ -198,7 +199,8 @@ Clicking the pill unfolds a panel that shows this week and next week.
 **Animation**
 - Opening reveals the panel from the pill's corner. It animates `clip-path: inset(...)` together with
   opacity and scale (`OPEN_MS`).
-- The day rows fade in one after another (`ROW_STAGGER_MS`).
+- The day rows fade in one after another (`ROW_STAGGER_MS`). The panel header shows the local time and
+  the date range.
 - Closing reverses this, and `visibility` flips at the end.
 - Reduced motion turns all of it off.
 
@@ -219,13 +221,14 @@ Clicking the pill unfolds a panel that shows this week and next week.
 - Storage holds blocks: `AvailabilityBlock { date, start, end, status, note? }`.
   - Times are local `"HH:MM"`, `end` is exclusive, and `"24:00"` is allowed.
 - `getAvailability()` samples the blocks into slots of `AVAILABILITY_SLOT_HOURS` (1 or 2) between
-  `AVAILABILITY_DAY_START` and `AVAILABILITY_DAY_END` (currently 0–24), for `AVAILABILITY_WEEKS` (2).
+  `AVAILABILITY_DAY_START` and `AVAILABILITY_DAY_END` (currently 0–24). The window starts today and runs
+  for `AVAILABILITY_DAYS` days (currently 8).
 - Overlaps take the most restrictive status. Time that no block covers falls back to `DEFAULT_STATUS`.
 - Dates are `YYYY-MM-DD` strings in `AVAILABILITY_TIMEZONE` (`Australia/Perth`). Date arithmetic and
   formatting use UTC.
 
 **Demo data:** `demoSource` provides a weekly pattern (nights, work, evenings, weekends) plus a few
-overrides, laid out relative to the current week.
+overrides, keyed by their offset from today.
 
 ### Planned: admin and write API (not implemented yet)
 
