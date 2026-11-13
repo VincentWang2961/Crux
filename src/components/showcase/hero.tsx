@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { ChevronDown } from "lucide-react";
 import { hero } from "@/lib/site-data";
+import { AvailabilityStatus } from "./availability-status";
 import { ThemeToggle } from "./theme-toggle";
 
 // Intro timeline in seconds. Everything is done by about 1.8 s; classes are in globals.css.
@@ -70,11 +71,14 @@ export function Hero() {
       className="relative flex min-h-lvh flex-col px-[max(1.25rem,env(safe-area-inset-left))] font-mono sm:px-10"
     >
       <div
-        className="hero-rise flex items-center justify-between pt-[max(1rem,env(safe-area-inset-top))] sm:pt-6"
+        className="hero-rise relative z-30 flex items-center justify-between gap-3 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-6"
         style={delay(T.bar)}
       >
         <span className="text-xs text-muted-foreground">~/crux</span>
-        <ThemeToggle className="size-10 sm:size-8" />
+        <div className="flex items-center gap-2">
+          <AvailabilityStatus />
+          <ThemeToggle className="size-10 sm:size-8" />
+        </div>
       </div>
 
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-5 pb-[6svh] sm:justify-center sm:gap-8 sm:pb-0">

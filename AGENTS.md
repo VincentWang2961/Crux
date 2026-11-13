@@ -6,7 +6,7 @@ Keep it current: when you change structure, scripts, or conventions, update this
 ## Project overview
 
 Crux is a web application built with **Next.js (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui**, deployed as a **Docker** container.
-It is Vincent Wang's personal site: a terminal-style hero, CV sections, a server-location globe, photos and an availability calendar.
+It is Vincent Wang's personal site: a terminal-style hero, CV sections, a server-location globe, photos, and an availability status pill.
 
 ## Tech stack
 
@@ -166,87 +166,66 @@ correctly.
   - Files must be world-readable (`chmod 644`). The Dockerfile also `chown`s `public/` to the non-root
     `nextjs` user, because uploads often arrive as mode 600, which made the image optimiser return 500.
 
-## Availability (bottom of the home page)
+## Availability (status pill in the hero bar)
 
-A minimal, GitHub-contribution-style matrix of small squares, using colour only.
-- **Layout:** one row per day (Mon–Sun, as on GitHub) and one square per time slot.
-- **Statuses:** each slot is `available` (green), `limited` (orange) or `unavailable` (red).
-- **Weeks:** this week is always shown. Next week is folded behind a toggle ("Next week 16–22 Nov").
+The hero's top bar holds a status pill next to the theme toggle. It answers first, with the current
+status and the next change, for example "● Unavailable · free 08:00" or "● Available · until 17:00".
+Clicking the pill unfolds a panel that shows this week and next week.
 
 | File | Role |
 | --- | --- |
 | `src/lib/availability.ts` | Types, the `AvailabilitySource` interface, the date and time helpers, the demo data and `getAvailability()`. |
-| `src/components/showcase/availability-section.tsx` | Server component. It renders the matrix at request time: `connection()` inside `<Suspense>`, with a placeholder of about the same size. |
-| `src/components/showcase/availability-grid.tsx` | Client matrix, the fold, the detail line and the legend. |
+| `src/components/showcase/availability-status.tsx` | Server wrapper. It renders the pill at request time, through `connection()` inside `<Suspense>`, so the rest of the hero stays static (the route is partially prerendered). The fallback is an empty pill outline. |
+| `src/components/showcase/availability-pill.tsx` | Client component: the pill, the panel and the timeline bars. |
 | `src/app/api/availability/route.ts` | `GET /api/availability` returns the same `AvailabilityWindow` as JSON (`no-store`). |
 
+**Pill**
+- It shows a coloured dot, the status, and a hint:
+  - `until HH:MM` while available;
+  - otherwise `free HH:MM`, or `free Mon HH:MM` when the next free time is another day.
+- The dot pulses softly only while available.
+
+**Panel**
+- Each day is drawn as a free/busy timeline bar over 00–24, the Outlook / Google Calendar pattern.
+  - Consecutive slots with the same status and note are merged into one segment (`segmentsOf`).
+  - Past time is dimmed. A vertical line marks "now" on today's bar, and today's label is a filled pill.
+- Below the bars, the selected or hovered segment is spelled out in words (`aria-live`), followed by a
+  legend.
+- Placement:
+  - On phones the panel spans the hero bar, because the wrapper is only `sm:relative`.
+  - From `sm` up it hangs from the pill's right edge and is `26rem` wide.
+
+**Animation**
+- Opening reveals the panel from the pill's corner. It animates `clip-path: inset(...)` together with
+  opacity and scale (`OPEN_MS`).
+- The day rows fade in one after another (`ROW_STAGGER_MS`).
+- Closing reverses this, and `visibility` flips at the end.
+- Reduced motion turns all of it off.
+
+**Accessibility**
+- The pill has `aria-expanded` and `aria-controls`.
+- While closed, the panel is `inert`.
+- Esc closes the panel and returns focus to the pill. Clicking outside also closes it.
+- Every segment is a button with a full label, for example "Tuesday 10 November, 09:00 to 17:00:
+  Unavailable, At work".
+- Keyboard navigation uses a roving tabindex:
+  - ←/→ move between segments.
+  - ↑/↓ move to another day while keeping the time of day.
+  - Home and End jump to the first or last segment.
+- Colour is backed by lightness steps (the `--avail-*` tokens in `globals.css`) and by the text
+  detail line.
+
 **Data model**
-- Storage holds **blocks**: `AvailabilityBlock { date, start, end, status, note? }`.
-  - Times are local `"HH:MM"`. `end` is exclusive, and `"24:00"` is allowed.
-  - Blocks work like calendar events.
-- `getAvailability()` samples the blocks into slots: each day becomes `slots[]` of `{ start, end, status, note? }`.
-  - A slot overlapped by several blocks takes the most restrictive status, together with that block's note.
-  - Time no block covers is `DEFAULT_STATUS` (`available`).
-- Storage keeps blocks, not slots, so the slot size or hours can change without migrating data.
+- Storage holds blocks: `AvailabilityBlock { date, start, end, status, note? }`.
+  - Times are local `"HH:MM"`, `end` is exclusive, and `"24:00"` is allowed.
+- `getAvailability()` samples the blocks into slots of `AVAILABILITY_SLOT_HOURS` (1 or 2) between
+  `AVAILABILITY_DAY_START` and `AVAILABILITY_DAY_END` (currently 0–24), for `AVAILABILITY_WEEKS` (2).
+- Overlaps take the most restrictive status. Time that no block covers falls back to `DEFAULT_STATUS`.
+- Dates are `YYYY-MM-DD` strings in `AVAILABILITY_TIMEZONE` (`Australia/Perth`). Date arithmetic and
+  formatting use UTC.
 
-**Tunables**
-- In `availability.ts`:
-  - `AVAILABILITY_SLOT_HOURS` is 1 or 2 (currently 1).
-  - `AVAILABILITY_DAY_START` and `AVAILABILITY_DAY_END` are the hours served, currently 0–24.
-  - `AVAILABILITY_WEEKS` is currently 2.
-- In `availability-grid.tsx`:
-  - `VISIBLE_HOURS` sets the hours shown per breakpoint: phones 08–22, `sm` 07–23, `lg` the whole day.
-    Wider screens therefore use the horizontal space for more hours instead of bigger squares.
-  - `CELL` sets the column width (square plus gap) for each breakpoint. The matrix is
-    `min(100%, label + columns × CELL)` wide, so squares only shrink, never grow.
-  - `EXPAND_MS` and `ROW_STAGGER_MS` time the fold animation.
-
-**Responsive columns**
-- Hidden hour columns use CSS (`hidden sm:table-cell` / `hidden lg:table-cell`), so nothing flashes
-  before hydration.
-- A `useSyncExternalStore` breakpoint hook (server snapshot `base`) only clamps keyboard navigation
-  and the tab stop to the visible hours.
-
-**Fold animation**
-- The next-week wrapper animates `grid-template-rows` from `0fr` to `1fr`, which reaches the content's
-  real height with no measuring.
-- Each row then fades and slides in, staggered by `--row-delay`.
-- The chevron rotates.
-- When closed, the region is `inert`, so it is skipped by Tab and by screen readers.
-- The toggle has `aria-expanded` and `aria-controls`.
-- Reduced motion turns all of this off.
-
-**Dates and time**
-- Dates are plain `YYYY-MM-DD` strings in `AVAILABILITY_TIMEZONE` (`Australia/Perth`).
-- "Today", "now" and the week boundaries are computed in that time zone.
-- Date arithmetic and formatting use UTC, so server and client agree and DST never shifts a day.
-
-**Colours**
-- The colours are the `--avail-*` tokens in `globals.css`, with low chroma.
-- There are no marks inside the squares, so the statuses also step in **lightness** and stay distinct in
-  greyscale and for colour-blind readers.
-  - Light mode: free is faint, limited is mid, unavailable is strongest.
-  - Dark mode: free is closest to the background and unavailable is brightest.
-- Keep that ordering if you retune the colours.
-
-**Accessibility (low vision included)**
-- **Tables:** each week is a real `<table>`. Days are row headers and times are column headers, both
-  with full spoken names, and each table has a caption.
-- **Labels:** every square is a button with a full label, for example
-  "Monday 9 November, 09:00 to 10:00: Unavailable, At work".
-- **Detail line:** the selected or hovered slot is repeated below in larger text
-  (`aria-live="polite"`), so the exact answer never depends on reading a colour.
-- **Current slot:** it has `aria-current="time"` and an outline. Past slots are dimmed. Today's row
-  label is a filled pill.
-- **Keyboard:**
-  - The matrix is a single tab stop (roving tabindex).
-  - ←/→ move by slot, ↑/↓ move by day (into next week when it is open), and Home/End jump to the
-    first or last visible slot.
-  - Hover and focus scale the square up.
-- **Sizes** are in rem, so the matrix scales with zoom.
-
-**Demo data:** `demoSource` produces a weekly pattern (nights, working hours, evenings, weekends) plus a
-few overrides, relative to the current week, so the demo always looks plausible.
+**Demo data:** `demoSource` provides a weekly pattern (nights, work, evenings, weekends) plus a few
+overrides, laid out relative to the current week.
 
 ### Planned: admin and write API (not implemented yet)
 
@@ -273,8 +252,8 @@ few overrides, relative to the current week, so the demo always looks plausible.
      - `401` when the token is missing or wrong.
      - `400` for invalid input.
    - **Source interface:** it then gains `replaceDay(date, blocks)`.
-3. **Admin UI.** Build a protected page, for example `/admin/availability`, that reuses the matrix, with both weeks open.
-   - Click or drag across squares to paint a status, and optionally add a note to a block.
+3. **Admin UI.** Build a protected page, for example `/admin/availability`, that reuses the timeline bars, with both weeks shown.
+   - Drag along a day's bar to paint a status, and optionally add a note to a block.
    - Saving calls `PUT`.
    - Protect the page with the same token or a proper auth session.
 
