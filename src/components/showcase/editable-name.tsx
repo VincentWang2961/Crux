@@ -48,8 +48,9 @@ export function EditableName({
   const [state, setState] = useState<State>("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // CJK input methods can produce full-width "＠" / "！"; NFKC maps them to ASCII.
-  const isAttempt = (text: string) => text.normalize("NFKC").startsWith(PREFIX);
+  // CJK input methods can produce full-width "＠" / "！"; NFKC maps them to ASCII. The
+  // prefix is case-insensitive ("Admin@", "ADMIN@" …); the password itself is not.
+  const isAttempt = (text: string) => text.normalize("NFKC").toLowerCase().startsWith(PREFIX);
 
   async function tryLogin(text: string, explicit: boolean) {
     if (!isAttempt(text) || !passwordOf(text)) return;
@@ -156,7 +157,7 @@ export function EditableName({
     state === "granted"
       ? "access granted"
       : isAttempt(value)
-        ? PREFIX + "*".repeat(value.length - PREFIX.length)
+        ? value.slice(0, PREFIX.length) + "*".repeat(value.length - PREFIX.length)
         : value;
 
   return (

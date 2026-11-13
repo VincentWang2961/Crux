@@ -239,7 +239,8 @@ A deliberately simple page whose only job is editing availability.
   - You can click the name, or just start typing while the hero is on screen.
   - The caret always stays at the end.
   - Space only starts editing once you are already editing, so Space still scrolls the page.
-- Anything typed after `admin@` is shown as `*`.
+- Anything typed after `admin@` is shown as `*`. The `admin@` prefix is case-insensitive (`Admin@`, `ADMIN@` …
+  all work); the password itself is case-sensitive.
 - Logging in:
   - Each change after `admin@` is debounced (`SUBMIT_DEBOUNCE_MS`) and posted to `POST /api/admin/login`.
     Enter submits immediately.
