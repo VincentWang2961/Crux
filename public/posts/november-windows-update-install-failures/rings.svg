@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" role="img" aria-labelledby="t d">
+  <title id="t">Update deployment rings</title>
+  <desc id="d">Three concentric rings. The innermost test ring gets updates first, then the pilot ring a few days later, then the broad ring after a quiet week.</desc>
+  <rect width="720" height="300" fill="#f6f6f5"/>
+  <g fill="none" stroke="#1f1f1f">
+    <circle cx="190" cy="150" r="125" stroke-width="1.5" fill="#ffffff"/>
+    <circle cx="190" cy="150" r="80" stroke-width="1.5" fill="#ececea"/>
+    <circle cx="190" cy="150" r="38" stroke-width="1.5" fill="#d6d6d3"/>
+  </g>
+  <g font-size="13" fill="#1f1f1f" text-anchor="middle">
+    <text x="190" y="154">test</text>
+    <text x="190" y="96">pilot</text>
+    <text x="190" y="50">broad</text>
+  </g>
+  <g font-size="14" fill="#1f1f1f">
+    <text x="380" y="92">1  Test ring</text>
+    <text x="380" y="152">2  Pilot ring</text>
+    <text x="380" y="212">3  Broad ring</text>
+  </g>
+  <g font-size="12" fill="#6b6b68">
+    <text x="404" y="112">IT machines · previews land here only</text>
+    <text x="404" y="172">real users · a few days behind</text>
+    <text x="404" y="232">everyone else · after a quiet week</text>
+  </g>
+</svg>

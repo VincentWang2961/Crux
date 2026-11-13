@@ -32,6 +32,8 @@ RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Markdown posts are read at runtime when cached pages revalidate.
+COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 
 USER nextjs
 EXPOSE 3000

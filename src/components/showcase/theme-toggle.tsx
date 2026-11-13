@@ -49,7 +49,12 @@ export function ThemeToggle({ className }: { className?: string }) {
       Math.max(y, window.innerHeight - y),
     );
 
+    // Scope the "no root cross-fade" rule in globals.css to this transition only, so
+    // route transitions keep their own cross-fade.
+    const html = document.documentElement;
+    html.classList.add("theme-switching");
     const transition = document.startViewTransition(switchTheme);
+    transition.finished.finally(() => html.classList.remove("theme-switching"));
     transition.ready
       .then(() => {
         document.documentElement.animate(

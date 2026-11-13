@@ -6,7 +6,7 @@ Keep it current: when you change structure, scripts, or conventions, update this
 ## Project overview
 
 Crux is a web application built with **Next.js (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui**, deployed as a **Docker** container.
-It is Vincent Wang's personal site: a terminal-style hero, CV sections, a server-location globe, photos, and an availability status pill.
+It is Vincent Wang's personal site: a terminal-style hero, CV sections, Markdown posts, a server-location globe, photos, and an availability status pill.
 
 ## Tech stack
 
@@ -17,6 +17,7 @@ It is Vincent Wang's personal site: a terminal-style hero, CV sections, a server
 | Styling | Tailwind CSS v4 (config lives in `src/app/globals.css`, no `tailwind.config`) |
 | UI | shadcn/ui, style `base-nova`, built on `@base-ui/react`; icons from `lucide-react` |
 | Class merging | `cn()` from `@/lib/utils` (re-exports the `cn` package) |
+| Markdown | `marked` (posts in `content/posts/`) |
 | Lint | ESLint 9 flat config (`eslint.config.mjs`, `eslint-config-next`) |
 | Package manager | **npm** (`package-lock.json` is the lockfile — don't add pnpm/yarn lockfiles) |
 | Deploy | Multi-stage `Dockerfile` using Next.js `output: "standalone"` |
@@ -35,6 +36,7 @@ It is Vincent Wang's personal site: a terminal-style hero, CV sections, a server
 │   │   └── ui/              # shadcn-generated primitives (managed by shadcn CLI)
 │   └── lib/
 │       └── utils.ts         # cn() helper
+├── content/posts/           # Markdown blog posts (<slug>.md)
 ├── public/                  # Static assets served from "/"
 ├── components.json          # shadcn CLI config (aliases, style, base color)
 ├── next.config.ts           # Next config (standalone output, turbopack rules)
@@ -101,6 +103,58 @@ Section bodies are separated by top borders.
   `skillGroups`, `education`, `certifications`). It is in **British English**.
 - The CV's phone number and referees are deliberately **not** published on the site.
 - Keep the look monochrome and quiet: muted labels, mono dates, outline/secondary badges, no colour accents.
+
+## Posts (blog)
+
+Short articles written in Markdown. The newest three appear on the home page, right after About.
+The full list is at `/posts`, and each post lives at `/posts/<slug>`.
+
+| File | Role |
+| --- | --- |
+| `content/posts/<slug>.md` | One post. A frontmatter block (`title`, `date: YYYY-MM-DD`, `summary`) followed by the Markdown body. The file name is the URL slug. |
+| `public/posts/<slug>/…` | The post's images. Link them as `![alt](/posts/<slug>/file.jpg "Caption")`. |
+| `src/lib/posts.ts` | Loads posts (`getAllPosts`, `getPost`, both `"use cache"`). Parses the frontmatter and renders the Markdown with `marked`. |
+| `src/components/posts/post-list.tsx` | The post rows (date, title, summary, reading time), used on the home page and at `/posts`. |
+| `src/components/posts/post-shell.tsx` | Frame for the `/posts` pages: a breadcrumb (`~/crux / posts`), the theme toggle and the footer. |
+| `src/components/posts/post-toc.tsx` | The contents sidebar (client component). |
+| `src/app/posts/page.tsx`, `src/app/posts/[slug]/page.tsx` | The routes. Posts are statically generated through `generateStaticParams`; an unknown slug calls `notFound()`. |
+
+**Markdown rendering**
+- Rendering uses GFM.
+- `##` and `###` headings get stable slug ids, a `#` anchor on hover, and an entry in the contents list.
+- An image becomes a `<figure>` with lazy loading; its Markdown title becomes the `<figcaption>`.
+- External links open in a new tab.
+- Raw HTML is allowed, because the posts are authored in this repo.
+
+**Typography**
+- The body is styled by `.post-prose` in `globals.css`: sans-serif at 17 px, line-height 1.8, a measure of
+  about 68 ch, and a monochrome palette.
+- Code, captions and meta text use the mono font.
+
+**Layout**
+- The post page has a header (date, reading time, title, summary) above the body.
+- From `lg` up, a sticky contents list sits on the right.
+  - Scroll-spy marks the section being read (the last heading above 30% of the viewport).
+  - A 1 px indicator glides to the active entry.
+- A 2 px reading-progress line runs across the top. It is pure CSS: `animation-timeline: scroll(root)`,
+  hidden where unsupported.
+
+**Transitions**
+- These use React `<ViewTransition>` on Next's route transitions.
+- A post title shares the name `post-title-<slug>` between its list row and the post's `<h1>`, so it
+  morphs into place (`.post-morph`, 420 ms, with a soft blur).
+- The body then rises in (`.post-enter`).
+- Other content cross-fades through the root transition (220 ms).
+- All of this is off under reduced motion.
+- The theme toggle's "no root cross-fade" rule is scoped to `html.theme-switching`, which the toggle sets
+  during its own transition, so the two never clash.
+
+**Docker:** the runner image copies `content/`, because cached pages re-read the posts when they revalidate.
+
+**Writing a post**
+1. Add `content/posts/<slug>.md` with the frontmatter.
+2. Put any images in `public/posts/<slug>/` and `chmod 644` them.
+3. Commit, then redeploy.
 
 ## Photography & Travel (below the globe)
 
