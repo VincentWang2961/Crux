@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 // Sticky contents list for lg screens. The section currently being read is highlighted
 // and a thin indicator glides to it; clicking scrolls smoothly (html has scroll-smooth).
-export function PostToc({ items }: { items: TocItem[] }) {
+export function PostToc({ items, title = "contents" }: { items: TocItem[]; title?: string }) {
   const [active, setActive] = useState(items[0]?.id);
   const [bar, setBar] = useState<{ top: number; height: number } | null>(null);
   const list = useRef<HTMLOListElement>(null);
@@ -50,7 +50,7 @@ export function PostToc({ items }: { items: TocItem[] }) {
   return (
     <nav aria-labelledby="toc-title" className="sticky top-10 font-mono text-xs">
       <p id="toc-title" className="mb-3 text-muted-foreground">
-        contents
+        {title}
       </p>
       <ol ref={list} className="relative flex flex-col border-l">
         {bar && (

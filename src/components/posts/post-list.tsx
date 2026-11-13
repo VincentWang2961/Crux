@@ -1,7 +1,7 @@
 import { ViewTransition } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { formatPostDate, type PostMeta } from "@/lib/posts";
+import { HTML_LANG, formatPostDate, type PostMeta } from "@/lib/posts";
 
 // Post rows for the home section and /posts. Each title shares a view-transition name
 // with the post page's heading, so opening a post morphs the title into place.
@@ -20,7 +20,7 @@ export function PostList({ posts }: { posts: PostMeta[] }) {
             <span className="font-mono text-xs leading-6 text-muted-foreground">
               <time dateTime={post.date}>{formatPostDate(post.date)}</time>
             </span>
-            <span className="flex min-w-0 flex-col gap-1.5">
+            <span lang={HTML_LANG[post.lang]} className="flex min-w-0 flex-col gap-1.5">
               <span className="flex items-start justify-between gap-4">
                 <ViewTransition name={`post-title-${post.slug}`} share="post-morph" default="none">
                   <span className="text-base font-semibold tracking-tight text-balance decoration-foreground/30 underline-offset-4 group-hover:underline">

@@ -356,10 +356,28 @@ html.theme-switching::view-transition-new(root) {
     animation: read-progress linear both;
     animation-timeline: scroll(root);
   }
+  /* Off where unsupported, and on small screens (mobile toolbars made it flicker). */
   @supports not (animation-timeline: scroll()) {
     .read-progress {
       display: none;
     }
+  }
+  @media (width < 48rem) {
+    .read-progress {
+      display: none;
+    }
+  }
+  /* Post images open in a lightbox (post-image-zoom.tsx). */
+  .post-prose img.zoomable {
+    cursor: zoom-in;
+    transition: opacity 150ms;
+  }
+  .post-prose img.zoomable:hover {
+    opacity: 0.92;
+  }
+  .post-prose img.zoomable:focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 3px;
   }
 }
 @keyframes read-progress {

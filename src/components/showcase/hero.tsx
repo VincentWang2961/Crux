@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { SiteBar } from "@/components/site/site-bar";
 import { hero } from "@/lib/site-data";
-import { AvailabilityStatus } from "./availability-status";
 import { EditableName } from "./editable-name";
-import { ThemeToggle } from "./theme-toggle";
 import { Typed, delay } from "./typed";
 
 // Intro timeline in seconds. Everything is done by about 1.8 s; classes are in globals.css.
@@ -16,6 +15,7 @@ const T = {
   roles: 0.95,
   roleStep: 0.08,
   intro: 1.2,
+  cta: 1.32,
   hint: 1.45,
 };
 
@@ -37,23 +37,8 @@ export function Hero() {
       lang="en-GB"
       className="relative flex min-h-lvh flex-col px-[max(1.25rem,env(safe-area-inset-left))] font-mono sm:px-10"
     >
-      <div
-        className="hero-rise relative z-30 flex items-center justify-between gap-3 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-6"
-        style={delay(T.bar)}
-      >
-        <nav aria-label="Site" className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span>~/crux</span>
-          <Link
-            href="/posts"
-            className="-my-2 py-2 underline-offset-4 transition-colors hover:text-foreground hover:underline"
-          >
-            posts
-          </Link>
-        </nav>
-        <div className="flex items-center gap-2">
-          <AvailabilityStatus />
-          <ThemeToggle className="size-10 sm:size-8" />
-        </div>
+      <div className="hero-rise relative z-30" style={delay(T.bar)}>
+        <SiteBar current="home" />
       </div>
 
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-5 pb-[6svh] sm:justify-center sm:gap-8 sm:pb-0">
@@ -96,6 +81,19 @@ export function Hero() {
         >
           {hero.intro}
         </p>
+
+        {/* A plain, obvious way into the writing for any visitor. */}
+        <Link
+          href="/posts"
+          style={delay(T.cta)}
+          className="hero-rise group inline-flex h-11 w-fit items-center gap-2 rounded-full bg-foreground px-5 text-sm text-background transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+        >
+          Read my posts
+          <ArrowRight
+            aria-hidden
+            className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+          />
+        </Link>
       </div>
 
       <a

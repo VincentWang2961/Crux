@@ -17,7 +17,7 @@ It is Vincent Wang's personal site: a terminal-style hero, CV sections, Markdown
 | Styling | Tailwind CSS v4 (config lives in `src/app/globals.css`, no `tailwind.config`) |
 | UI | shadcn/ui, style `base-nova`, built on `@base-ui/react`; icons from `lucide-react` |
 | Class merging | `cn()` from `@/lib/utils` (re-exports the `cn` package) |
-| Markdown | `marked` (posts in `content/posts/`) |
+| Markdown | `marked` (posts in `content/posts/`); AI translation via `@anthropic-ai/sdk` (dev, `npm run translate`) |
 | Lint | ESLint 9 flat config (`eslint.config.mjs`, `eslint-config-next`) |
 | Package manager | **npm** (`package-lock.json` is the lockfile — don't add pnpm/yarn lockfiles) |
 | Deploy | Multi-stage `Dockerfile` using Next.js `output: "standalone"` |
@@ -59,6 +59,7 @@ npm run dev        # dev server on http://localhost:3000
 npm run build      # production build (also type-checks)
 npm run start      # serve the production build
 npm run lint       # ESLint
+npm run translate  # AI-translate posts (needs ANTHROPIC_API_KEY); see Posts
 
 npx shadcn@latest add <component>   # add a shadcn/ui component into src/components/ui
 
@@ -104,57 +105,118 @@ Section bodies are separated by top borders.
 - The CV's phone number and referees are deliberately **not** published on the site.
 - Keep the look monochrome and quiet: muted labels, mono dates, outline/secondary badges, no colour accents.
 
+## Site bar (every page)
+
+`src/components/site/site-bar.tsx` is the single top bar, used by the hero and by every `/posts` page,
+so nothing moves between pages.
+- **Padding:** the parent provides the side padding: `max(1.25rem, safe-area)` on phones and
+  `sm:px-10` from `sm` up. The bar itself sets the top padding.
+- **Left:** `~/crux`, which links home and is hidden on phones to save room, then the **Posts** pill.
+  - The pill has a book icon and a label, 40 px tall on phones.
+  - It is filled while you are in `/posts`.
+- **Right:** the availability pill and the theme toggle.
+- **Hero call to action:** the hero also has a solid "Read my posts →" button under the intro (`T.cta`),
+  so anyone can find the writing.
+
 ## Posts (blog)
 
-Short articles written in Markdown, kept off the home page. The hero's top bar has a `posts` link
-(next to `~/crux`) to the list at `/posts`; each post lives at `/posts/<slug>`.
+Short articles written in Markdown, kept off the home page. You reach them through the site bar's
+**Posts** pill or the hero's "Read my posts" button.
 
 | File | Role |
 | --- | --- |
-| `content/posts/<slug>.md` | One post. A frontmatter block (`title`, `date: YYYY-MM-DD`, `summary`) followed by the Markdown body. The file name is the URL slug. |
-| `public/posts/<slug>/…` | The post's images. Link them as `![alt](/posts/<slug>/file.jpg "Caption")`. |
-| `src/lib/posts.ts` | Loads posts (`getAllPosts`, `getPost`, both `"use cache"`). Parses the frontmatter and renders the Markdown with `marked`. |
-| `src/components/posts/post-list.tsx` | The post rows (date, title, summary, reading time) on `/posts`. |
-| `src/components/posts/post-shell.tsx` | Frame for the `/posts` pages: a breadcrumb (`~/crux / posts`), the theme toggle and the footer. |
-| `src/components/posts/post-toc.tsx` | The contents sidebar (client component). |
-| `src/app/posts/page.tsx`, `src/app/posts/[slug]/page.tsx` | The routes. Posts are statically generated through `generateStaticParams`; an unknown slug calls `notFound()`. |
+| `content/posts/<slug>.md` | The original post, in English or Chinese. Frontmatter: `title`, `date: YYYY-MM-DD`, `summary`, and `lang: en` or `lang: zh` (default `en`). The file name is the URL slug. |
+| `content/posts/<slug>.<lang>.md` | An AI translation, written by `npm run translate`. It has the same frontmatter plus `translatedFrom` and `sourceHash`. You can review or hand-edit it. |
+| `public/posts/<slug>/…` | The post's images. Link them as `![alt](/posts/<slug>/file.jpg "Caption")` and `chmod 644` them. |
+| `src/lib/posts.ts` | Loads posts with `getAllPosts`, `getPost(slug, lang?)` and `getAlternateVersions`, all `"use cache"`. It parses the frontmatter, renders the Markdown with `marked`, and resolves language versions. |
+| `src/components/posts/post-view.tsx` | One post in one language: the header, body, repost notice and contents list. It is shared by both post routes. |
+| `post-list.tsx`, `post-shell.tsx`, `back-link.tsx`, `post-language.tsx`, `post-copyright.tsx`, `post-image-zoom.tsx`, `post-toc.tsx` | The building blocks: the list, the page frame, the back buttons, the language pill, the repost notice, the image lightbox and the contents sidebar. |
+| `src/app/posts/page.tsx`, `[slug]/page.tsx`, `[slug]/[lang]/page.tsx` | The routes. They are statically generated; an unknown slug or language calls `notFound()`. |
+| `scripts/translate-posts.mjs` | The AI translation script (see below). |
+
+**Languages (English first)**
+- **Supported languages:** `LANGS` lists them, currently `en` and `zh`.
+- **Default URL:** `/posts/<slug>` shows the English version when there is one, whether original or
+  translated. Otherwise it shows the original.
+- **Other languages:** these live at `/posts/<slug>/<lang>`, for example `/zh`. Requesting the default
+  language under its long URL redirects to the short one.
+- **The one control:** a pill naming the other language ("中文" or "English") sits under the summary.
+  With more languages later, it becomes a row of the same pills.
+- **Translated versions:** they say so, for example "Translated from Chinese by AI · read the original",
+  and link back to the original.
+- **Localised chrome:** the back buttons, reading time, date, contents title and repost notice all
+  follow the post's language. `<article lang>` is `en-GB` or `zh-CN`.
+- **Adding a language:** add it to `LANGS`, `LANG_NAME`, `LANG_NAME_IN` and `HTML_LANG` in
+  `posts.ts`, and to `LANGS` and `LANG_NAME` in the script.
+
+**AI translation** (`npm run translate`)
+- **What it does:** for each original, it writes `<slug>.<other>.md` for every other language. The
+  translation is done with Claude through `@anthropic-ai/sdk`, a dev dependency.
+  - Model: `claude-opus-5-5`.
+  - It streams the response and uses server-side refusal `fallbacks: "default"`.
+- **Skipping up-to-date translations:** a translation stores the original's `sourceHash`, the first 16
+  hex characters of the SHA-256 of the whole file. Translations whose hash still matches are skipped.
+- **Options:** add slugs to limit the run, or `--force` to redo everything.
+- **When it runs:** on your machine at authoring time, never at request time and not in Docker.
+- **Credentials:** `ANTHROPIC_API_KEY` or an `ant auth login` profile.
+- **Afterwards:** review the output, commit it and redeploy.
 
 **Markdown rendering**
-- Rendering uses GFM.
+- GFM.
 - `##` and `###` headings get stable slug ids, a `#` anchor on hover, and an entry in the contents list.
 - An image becomes a `<figure>` with lazy loading; its Markdown title becomes the `<figcaption>`.
 - External links open in a new tab.
 - Raw HTML is allowed, because the posts are authored in this repo.
 
-**Typography**
-- The body is styled by `.post-prose` in `globals.css`: sans-serif at 17 px, line-height 1.8, a measure of
-  about 68 ch, and a monochrome palette.
+**Typography:** the body is styled by `.post-prose` in `globals.css`.
+- Sans-serif at 17 px with line-height 1.8, a measure of about 68 ch, and a monochrome palette.
 - Code, captions and meta text use the mono font.
 
 **Layout**
-- The post page has a header (date, reading time, title, summary) above the body.
-- From `lg` up, a sticky contents list sits on the right.
+- **Back buttons:** labelled buttons, 40 px tall, with an arrow (`BackLink`) for visitors who don't
+  rely on the browser's back button.
+  - On `/posts`: "← Home".
+  - On a post: "← All posts" at the top and "← Back to all posts" at the bottom.
+- **Contents sidebar:** from `lg` up, a sticky contents list sits on the right.
   - Scroll-spy marks the section being read (the last heading above 30% of the viewport).
   - A 1 px indicator glides to the active entry.
-- A 2 px reading-progress line runs across the top. It is pure CSS: `animation-timeline: scroll(root)`,
-  hidden where unsupported.
+- **Reading progress:** a 2 px line across the top, made with `animation-timeline: scroll(root)`.
+  - It shows only from `md` (48 rem) up. Mobile toolbars made it flicker, so phones don't get it.
+  - It is hidden in browsers without scroll-driven animations.
 
-**Transitions**
-- These use React `<ViewTransition>` on Next's route transitions.
-- A post title shares the name `post-title-<slug>` between its list row and the post's `<h1>`, so it
-  morphs into place (`.post-morph`, 420 ms, with a soft blur).
+**Repost notice** (`post-copyright.tsx`)
+- Under every post: "© YEAR Vincent Wang. You're welcome to repost or share this article, as long as
+  you credit the author and link to the original."
+- It also has a Chinese version.
+- It shows the full URL and has a "Copy link" button.
+
+**Image lightbox** (`post-image-zoom.tsx`): the same idea as the home page photo lightbox.
+- **Opening:** post images are focusable buttons. Click, Enter or Space opens a native `<dialog>` with a
+  blurred `::backdrop`.
+- **FLIP:** the enlarged image starts exactly over the inline one (position, size and corner radius)
+  and flies to the centre (`OPEN_MS`); closing flies it back (`CLOSE_MS`).
+  - The inline image is hidden meanwhile.
+  - The already-loaded URL is reused, so there is no flash.
+- **Closing:** Esc, a click anywhere, or the close button.
+- **Reduced motion:** opens and closes instantly.
+- **Don't transform the `<dialog>` itself.** Animate the `<img>`.
+
+**Transitions:** React `<ViewTransition>` on Next's route transitions.
+- A post title shares the name `post-title-<slug>` between its list row and the post's `<h1>`, in every
+  language, so it morphs into place (`.post-morph`, 420 ms, with a soft blur). Switching language morphs
+  the title too.
 - The body then rises in (`.post-enter`).
 - Other content cross-fades through the root transition (220 ms).
 - All of this is off under reduced motion.
-- The theme toggle's "no root cross-fade" rule is scoped to `html.theme-switching`, which the toggle sets
-  during its own transition, so the two never clash.
+- The theme toggle's "no root cross-fade" rule is scoped to `html.theme-switching`, which the toggle
+  sets during its own transition, so the two never clash.
 
 **Docker:** the runner image copies `content/`, because cached pages re-read the posts when they revalidate.
 
 **Writing a post**
-1. Add `content/posts/<slug>.md` with the frontmatter.
-2. Put any images in `public/posts/<slug>/` and `chmod 644` them.
-3. Commit, then redeploy.
+1. Add `content/posts/<slug>.md` with the frontmatter, including `lang` if the post is in Chinese.
+2. Put any images in `public/posts/<slug>/`.
+3. Run `npm run translate`, review the generated version, commit and redeploy.
 
 ## Photography & Travel (below the globe)
 
@@ -422,6 +484,7 @@ Nodes will later be connected by line segments (e.g. replication / network topol
 | `PORT` | docker compose | Host port mapped to container port 3000 |
 | `ADMIN_PASSWORD` | `/api/admin/login` | Admin password (typed after `admin@` over the hero name). Server-only. |
 | `ADMIN_SESSION_SECRET` | `admin-auth.ts` | At least 32 random characters; signs the admin session cookie. Changing it logs everyone out. |
+| `ANTHROPIC_API_KEY` | `npm run translate` only | Claude API key for post translation (local shell, not the container). |
 | `AVAILABILITY_DATA_DIR` | `availability.ts` | Folder for `availability.json` (default `./data`; `/app/data` in Docker). |
 
 ## Git conventions
