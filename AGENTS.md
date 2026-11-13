@@ -245,6 +245,10 @@ A deliberately simple page whose only job is editing availability.
     Enter submits immediately.
   - On success the name reads "access granted" and the page goes to `/admin`.
   - Esc, or leaving the field with a password attempt in it, puts the name back.
+  - Feedback: a wrong password after Enter shakes the name (`.name-shake`). Failed attempts made while
+    typing stay silent. A `429` shows "too many attempts" under the name.
+  - Input from a CJK input method is NFKC-normalised on both client and server, so a full-width
+    "！" or "＠" counts as its ASCII form.
 - How it is built:
   - A transparent `<input>` (`tabIndex=-1`, kept off the tab order on purpose) sits over the name, so
     phones get a keyboard on tap.
@@ -259,7 +263,8 @@ A deliberately simple page whose only job is editing availability.
   - It is marked `Secure` whenever the request arrived over HTTPS (directly or via `x-forwarded-proto`).
 - **Re-verification:** `isAdmin()` re-checks the cookie in the `/admin` page and in every write. The
   `/admin` page reads the cookie inside `<Suspense>` and redirects to `/` without a valid session.
-- **Rate limit:** 30 failed logins per client per 10 minutes, kept in memory, then `429`.
+- **Rate limit:** 60 failed logins per client per 10 minutes, kept in memory, then `429`. Typing pauses
+  each send an attempt, so one real login can count several times.
 - **Logout:** `DELETE /api/admin/login`.
 
 **Editor** (`src/components/admin/availability-editor.tsx`)

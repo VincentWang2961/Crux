@@ -194,7 +194,15 @@
     opacity: 0;
   }
 }
+/* Hero name: wrong admin password after Enter. */
+@keyframes name-shake {
+  20%, 60% { transform: translateX(-0.12em); }
+  40%, 80% { transform: translateX(0.12em); }
+}
 @layer components {
+  .name-shake {
+    animation: name-shake 0.32s ease-in-out;
+  }
   .hero-rise {
     animation: hero-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s) both;
   }
@@ -212,7 +220,8 @@
   @media (prefers-reduced-motion: reduce) {
     .hero-rise,
     .hero-char,
-    .hero-caret {
+    .hero-caret,
+    .name-shake {
       animation: none;
     }
   }

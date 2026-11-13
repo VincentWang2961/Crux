@@ -17,7 +17,8 @@ import { Typed, delay } from "./typed";
 const PREFIX = "admin@";
 const SUBMIT_DEBOUNCE_MS = 350;
 
-type State = "idle" | "checking" | "granted";
+// "denied" = wrong password after Enter (shakes); "limited" = too many attempts (429).
+type State = "idle" | "checking" | "granted" | "denied" | "limited";
 
 export function EditableName({
   name,
@@ -37,20 +38,26 @@ export function EditableName({
   const [state, setState] = useState<State>("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function tryLogin(text: string) {
-    if (!text.startsWith(PREFIX) || text.length === PREFIX.length) return;
+  // CJK input methods can produce full-width "＠" / "！"; NFKC maps them to ASCII.
+  const isAttempt = (text: string) => text.normalize("NFKC").startsWith(PREFIX);
+
+  async function tryLogin(text: string, explicit: boolean) {
+    if (!isAttempt(text) || text.length === PREFIX.length) return;
     setState("checking");
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: text.slice(PREFIX.length) }),
+      body: JSON.stringify({ password: text.normalize("NFKC").slice(PREFIX.length) }),
     }).catch(() => null);
     if (res?.ok) {
       setState("granted");
       input.current?.blur();
       setTimeout(() => router.push("/admin"), 450);
+    } else if (res?.status === 429) {
+      setState("limited");
     } else {
-      setState("idle");
+      // Silent while typing; a visible "no" only when Enter was pressed.
+      setState(explicit ? "denied" : "idle");
     }
   }
 
@@ -58,8 +65,9 @@ export function EditableName({
     setTouched(true);
     setValue(next);
     if (timer.current) clearTimeout(timer.current);
-    if (next.startsWith(PREFIX) && next.length > PREFIX.length) {
-      timer.current = setTimeout(() => tryLogin(next), SUBMIT_DEBOUNCE_MS);
+    if (state === "denied") setState("idle");
+    if (isAttempt(next) && next.length > PREFIX.length) {
+      timer.current = setTimeout(() => tryLogin(next, false), SUBMIT_DEBOUNCE_MS);
     }
   }
 
@@ -94,7 +102,7 @@ export function EditableName({
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (timer.current) clearTimeout(timer.current);
-      tryLogin(value);
+      tryLogin(value, true);
     } else if (e.key === "Escape") {
       reset();
       input.current?.blur();
@@ -110,13 +118,13 @@ export function EditableName({
 
   // Never leave a (masked) password attempt on screen.
   function onBlur() {
-    if (state !== "granted" && value.startsWith(PREFIX)) reset();
+    if (state !== "granted" && isAttempt(value)) reset();
   }
 
   const shown =
     state === "granted"
       ? "access granted"
-      : value.startsWith(PREFIX)
+      : isAttempt(value)
         ? PREFIX + "*".repeat(value.length - PREFIX.length)
         : value;
 
@@ -128,7 +136,16 @@ export function EditableName({
       )}
     >
       {touched ? (
-        <span aria-hidden className={cn(state === "checking" && "opacity-60")}>
+        <span
+          aria-hidden
+          // key restarts the shake on every failed Enter
+          key={state === "denied" ? `denied-${value}` : "name"}
+          className={cn(
+            "inline-block",
+            state === "checking" && "opacity-60",
+            state === "denied" && "name-shake",
+          )}
+        >
           {shown}
         </span>
       ) : (
@@ -142,6 +159,14 @@ export function EditableName({
           touched ? "animate-caret motion-reduce:animate-none" : "hero-caret",
         )}
       />
+      {state === "limited" && (
+        <span
+          role="status"
+          className="absolute top-full left-0 mt-1 font-mono text-xs font-normal tracking-normal whitespace-nowrap text-muted-foreground"
+        >
+          too many attempts, try again in a few minutes
+        </span>
+      )}
       <input
         ref={input}
         tabIndex={-1}

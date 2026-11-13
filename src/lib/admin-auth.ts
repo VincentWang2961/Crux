@@ -20,11 +20,15 @@ function secret(): string | null {
 
 export const adminConfigured = () => Boolean(process.env.ADMIN_PASSWORD && secret());
 
-/** Constant-time comparison (hashing first makes the lengths equal). */
+/**
+ * Constant-time comparison (hashing first makes the lengths equal). Both sides are
+ * NFKC-normalised, so full-width characters from a CJK input method ("！", "＠") match
+ * their ASCII forms.
+ */
 export function passwordMatches(input: string): boolean {
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected) return false;
-  return timingSafeEqual(sha256(input), sha256(expected));
+  return timingSafeEqual(sha256(input.normalize("NFKC")), sha256(expected.normalize("NFKC")));
 }
 
 const sign = (payload: string, key: string) =>
@@ -56,7 +60,8 @@ export async function isAdmin(): Promise<boolean> {
 // ---- Failed-login rate limit (per client, in memory; resets on restart) ----------
 
 const WINDOW_MS = 10 * 60 * 1000;
-const MAX_FAILURES = 30; // the hero submits as you type, so allow a few per attempt
+// The hero submits whenever typing pauses, so one real attempt can cost several failures.
+const MAX_FAILURES = 60;
 const failures = new Map<string, { count: number; reset: number }>();
 
 export function isRateLimited(client: string): boolean {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { AvailabilityEditor } from "@/components/admin/availability-editor";
 import { isAdmin } from "@/lib/admin-auth";
 import { getAvailability } from "@/lib/availability";
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 // Reached from the hero ("admin@<password>" typed over the name). The session cookie is
 // verified here on every request; without it you are sent back to the home page.
 async function Editor() {
+  await connection(); // the session check and the window both read the clock
   if (!(await isAdmin())) redirect("/");
   return <AvailabilityEditor data={await getAvailability()} />;
 }
