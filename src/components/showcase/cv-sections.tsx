@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,6 +18,7 @@ import {
   skillGroups,
 } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
+import { PortraitCard } from "./portrait-card";
 import { Reveal } from "./reveal";
 import { Section } from "./section";
 
@@ -58,35 +58,26 @@ function EntryHead({ title, sub, when }: { title: string; sub: string; when: str
 // Stagger index for .reveal children (multiplied by the step in globals.css).
 const at = (i: number) => ({ "--i": i }) as CSSProperties;
 
-// The portrait as a print, like the photos further down: white border, slight tilt that
-// straightens on hover. Shown 3:4; a 4:3 original is cropped by object-cover around
-// `position`, so the file needn't be re-exported. Until a photo is set, a quiet monogram.
+// The portrait (portrait-card.tsx): a straight print on phones; on desktop it floats and
+// tilts towards the mouse. Clicking turns it over to show where it was taken. 3:4 frame;
+// a 4:3 original is cropped by object-cover around `position`. Placeholder until set.
 function PortraitPrint({ className }: { className?: string }) {
   const p = profile.portrait;
   return (
     <figure className={cn("reveal reveal-photo", className)} style={at(1.5)}>
-      <div className="-rotate-2 rounded-[3px] bg-white p-1.5 shadow-md ring-1 ring-black/5 transition-[rotate,box-shadow] duration-500 ease-out hover:rotate-0 hover:shadow-xl motion-reduce:transition-none dark:bg-neutral-200">
-        <div className="relative aspect-3/4 overflow-hidden rounded-[2px] bg-muted">
-          {p ? (
-            <Image
-              src={p.src}
-              alt={p.alt}
-              fill
-              sizes="(min-width: 768px) 14rem, 11rem"
-              style={{ objectPosition: p.position ?? "50% 35%" }}
-              className="reveal-zoom object-cover"
-            />
-          ) : (
-            <div
-              role="img"
-              aria-label="Portrait coming soon"
-              className="flex h-full items-center justify-center font-mono text-2xl tracking-widest text-neutral-400"
-            >
-              VW
-            </div>
-          )}
+      {p ? (
+        <PortraitCard portrait={p} />
+      ) : (
+        <div className="rounded-[3px] bg-white p-1.5 shadow-md ring-1 ring-black/5 dark:bg-neutral-200">
+          <div
+            role="img"
+            aria-label="Portrait coming soon"
+            className="flex aspect-3/4 items-center justify-center rounded-[2px] bg-muted font-mono text-2xl tracking-widest text-neutral-400"
+          >
+            VW
+          </div>
         </div>
-      </div>
+      )}
     </figure>
   );
 }

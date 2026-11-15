@@ -17,7 +17,17 @@ export const hero = {
 // deliberately left out of the website.
 /** Portrait shown in About. `src` is a file in public/; `position` is the focal point
  *  for the 3:4 crop (CSS object-position), so a 4:3 original can be used as it is. */
-export type Portrait = { src: string; alt: string; width: number; height: number; position?: string };
+export type Portrait = {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  position?: string;
+  /** Shown on the back when the photo is flipped: place lines (first is the headline)… */
+  place?: string[];
+  /** …and the date it was taken, YYYY-MM-DD. */
+  taken?: string;
+};
 
 export const profile = {
   // One paragraph, kept short; the tags below carry the details.
@@ -45,6 +55,8 @@ export const profile = {
     width: 1500,
     height: 2000,
     position: "50% 50%",
+    place: ["McWay Falls", "Big Sur, California"],
+    taken: "2026-09-27",
   } as Portrait | null,
   contacts: [
     { label: "Email", value: "vincent@vincentwang.au", href: "mailto:vincent@vincentwang.au" },

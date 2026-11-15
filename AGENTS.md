@@ -107,11 +107,20 @@ Section bodies are separated by top borders.
 
 **About** (`About` in `cv-sections.tsx`)
 - One short paragraph (`profile.intro`), a row of highlight tags (`profile.tags`), then the contact links.
-- **Portrait:** `profile.portrait` (`src`, `alt`, `width`, `height`, optional `position`). It is shown as a
-  print like the photos further down: white border, slight tilt that straightens on hover.
+- **Portrait:** `profile.portrait` (`src`, `alt`, `width`, `height`, optional `position`, plus `place`
+  lines and a `taken` date for the back). The file is `public/portrait.jpg`. `portrait-card.tsx` draws it
+  as a white-bordered print.
   - The frame is always 3:4. A 4:3 original needs no re-export: `object-cover` crops it, centred on
-    `position` (CSS `object-position`, default `50% 35%`).
+    `position` (CSS `object-position`).
   - Right column from `sm` up (11 rem, 14 rem from `md`); above the paragraph on phones (10 rem wide).
+  - **3D tilt:** desktop with a mouse only (`TILT_QUERY`: hover, fine pointer, ≥ 640 px, no reduced
+    motion). While the mouse is anywhere over the About section, the card turns to face it, up to
+    `MAX_TILT` (9°), with a soft glare that follows. Each frame eases `EASE` of the way to the target,
+    and it settles flat when the mouse leaves. Phones and touch screens get a straight, still photo.
+  - **Flip:** click, Enter or Space turns the card over (`rotateY(180deg)`, 700 ms ease-in-out) to show a
+    map pin, the place (first line as the headline) and the date in British format; again turns it back.
+    The button has `aria-pressed` and a label that says what it will do. A small ↻ badge on the photo
+    hints that it turns. Reduced motion flips instantly.
   - While `portrait` is `null`, a "VW" monogram placeholder is shown.
 - **Scroll-in:** the section is wrapped in `<Reveal>` (`reveal.tsx`). Every `.reveal` inside it rises,
   fades and un-blurs on an expo-out curve the first time the section enters the viewport, staggered by
