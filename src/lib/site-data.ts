@@ -30,6 +30,14 @@ export type Portrait = {
   taken?: string;
 };
 
+export type Contact = {
+  icon: "mail" | "linkedin" | "github" | "steam";
+  label: string;
+  value: string;
+  href: string;
+  lang?: string;
+};
+
 export const profile = {
   // Up to three short paragraphs; the tags below carry the headlines.
   intro: [
@@ -61,15 +69,19 @@ export const profile = {
     place: ["McWay Falls", "Big Sur, California"],
     taken: "2026-09-27",
   } as Portrait | null,
+  // Shown as icon + name + link. `icon` picks a Tabler icon in cv-sections.tsx;
+  // `lang` marks a value that isn't English (so screen readers pronounce it right).
   contacts: [
-    { label: "Email", value: "vincent@vincentwang.au", href: "mailto:vincent@vincentwang.au" },
+    { icon: "mail", label: "Email", value: "vincent@vincentwang.au", href: "mailto:vincent@vincentwang.au" },
     {
+      icon: "linkedin",
       label: "LinkedIn",
-      value: "vincent-wang-6967b5307",
-      href: "https://www.linkedin.com/in/vincent-wang-6967b5307",
+      value: "Vincent Wang",
+      href: "https://www.linkedin.com/in/vincent-wang-6967b5307/",
     },
-    { label: "GitHub", value: "VincentWang2961", href: "https://github.com/VincentWang2961" },
-  ],
+    { icon: "github", label: "GitHub", value: "VincentWang2961", href: "https://github.com/VincentWang2961" },
+    { icon: "steam", label: "Steam", value: "淼表", lang: "zh", href: "https://steamcommunity.com/id/miaobiao/" },
+  ] as Contact[],
 };
 
 export type ExperienceItem = {

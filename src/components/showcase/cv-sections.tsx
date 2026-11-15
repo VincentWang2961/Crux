@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { IconBrandGithub, IconBrandLinkedin, IconBrandSteam, IconMail } from "@tabler/icons-react";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import {
   certifications,
+  type Contact,
   education,
   experience,
   profile,
@@ -24,6 +26,14 @@ import { Section } from "./section";
 
 // CV content for the middle of the home page (between the hero and the globe).
 // All copy lives in site-data.ts; these components only lay it out.
+
+// Contact icons (Tabler: consistent outline set that includes brand marks).
+const CONTACT_ICON = {
+  mail: IconMail,
+  linkedin: IconBrandLinkedin,
+  github: IconBrandGithub,
+  steam: IconBrandSteam,
+} satisfies Record<Contact["icon"], unknown>;
 
 const period = "shrink-0 font-mono text-xs text-muted-foreground tabular-nums";
 
@@ -115,21 +125,32 @@ export function About() {
             <ul
               aria-label="Contact"
               style={at(2 + profile.tags.length * 0.35 + 0.5)}
-              className="reveal mt-8 flex flex-wrap gap-x-5 gap-y-2 border-t border-dashed pt-5"
+              className="reveal mt-8 grid gap-x-6 gap-y-1 border-t border-dashed pt-5 sm:grid-cols-[repeat(2,auto)] sm:justify-start"
             >
-              {profile.contacts.map((c) => (
-                <li key={c.label}>
-                  <a
-                    href={c.href}
-                    {...(c.href.startsWith("http") && { target: "_blank", rel: "noreferrer" })}
-                    className="group inline-flex min-h-9 items-center gap-1.5 text-sm transition-colors hover:text-foreground"
-                  >
-                    <span className="text-muted-foreground">{c.label}</span>
-                    <span className="font-mono text-xs">{c.value}</span>
-                    <ArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:-translate-y-px group-hover:translate-x-px" />
-                  </a>
-                </li>
-              ))}
+              {profile.contacts.map((c) => {
+                const Icon = CONTACT_ICON[c.icon];
+                const external = c.href.startsWith("http");
+                return (
+                  <li key={c.label} className="flex min-h-10 min-w-0 items-center gap-2.5 text-sm">
+                    <Icon aria-hidden stroke={1.6} className="size-[1.125rem] shrink-0 text-muted-foreground" />
+                    <span className="shrink-0 text-muted-foreground">{c.label}:</span>
+                    <a
+                      href={c.href}
+                      lang={c.lang}
+                      {...(external && { target: "_blank", rel: "noreferrer" })}
+                      className="group inline-flex min-w-0 items-center gap-1 font-medium underline decoration-foreground/25 underline-offset-4 transition-colors hover:decoration-foreground"
+                    >
+                      <span className="truncate">{c.value}</span>
+                      {external && (
+                        <ArrowUpRight
+                          aria-hidden
+                          className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-px group-hover:translate-x-px"
+                        />
+                      )}
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 

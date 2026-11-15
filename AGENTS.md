@@ -15,7 +15,7 @@ It is Vincent Wang's personal site: a terminal-style hero, CV sections, Markdown
 | Framework | Next.js 16 (App Router, `src/` dir, Turbopack, `cacheComponents` enabled) |
 | Language | TypeScript (strict), import alias `@/*` → `src/*` |
 | Styling | Tailwind CSS v4 (config lives in `src/app/globals.css`, no `tailwind.config`) |
-| UI | shadcn/ui, style `base-nova`, built on `@base-ui/react`; icons from `lucide-react` |
+| UI | shadcn/ui, style `base-nova`, built on `@base-ui/react`; icons from `lucide-react` (brand icons from `@tabler/icons-react`) |
 | Class merging | `cn()` from `@/lib/utils` (re-exports the `cn` package) |
 | Markdown | `marked` (posts in `content/posts/`); AI translation via `@anthropic-ai/sdk` (dev, `npm run translate`) |
 | Lint | ESLint 9 flat config (`eslint.config.mjs`, `eslint-config-next`) |
@@ -107,6 +107,9 @@ Section bodies are separated by top borders.
 
 **About** (`About` in `cv-sections.tsx`)
 - Up to three short paragraphs (`profile.intro`), at most four highlight tags (`profile.tags`), then the contact links.
+- **Contacts** (`profile.contacts`): each row is icon + "Name:" + link (two columns from `sm`). Icons come
+  from `@tabler/icons-react` (outline set with brand marks; lucide has none), mapped in `CONTACT_ICON`.
+  Add a new kind there and in the `Contact["icon"]` union. Set `lang` on a non-English value.
 - **Portrait:** `profile.portrait` (`src`, `alt`, `width`, `height`, optional `position`, plus `place`
   lines and a `taken` date for the back). The file is `public/portrait.jpg`. `portrait-card.tsx` draws it
   as a white-bordered print.
