@@ -39,7 +39,13 @@ export const profile = {
     "Mandarin & English",
   ],
   // Set to a Portrait once the photo is in public/ (null shows a quiet placeholder).
-  portrait: null as Portrait | null,
+  portrait: {
+    src: "/portrait.jpg",
+    alt: "Vincent Wang in sunglasses on a clifftop above a turquoise cove, with a tree-topped rocky islet behind him",
+    width: 1500,
+    height: 2000,
+    position: "50% 50%",
+  } as Portrait | null,
   contacts: [
     { label: "Email", value: "vincent@vincentwang.au", href: "mailto:vincent@vincentwang.au" },
     {
