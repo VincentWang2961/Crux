@@ -15,22 +15,31 @@ export const hero = {
 
 // Contact details shown publicly. The phone number and referees from the CV are
 // deliberately left out of the website.
+/** Portrait shown in About. `src` is a file in public/; `position` is the focal point
+ *  for the 3:4 crop (CSS object-position), so a 4:3 original can be used as it is. */
+export type Portrait = { src: string; alt: string; width: number; height: number; position?: string };
+
 export const profile = {
-  headline: "IT Support & Service Desk · Site & Infrastructure Support",
-  summary: [
-    "Master of Information Technology graduate from The University of Western Australia (Distinction average), " +
-      "with hands-on experience in Windows imaging and deployment, hardware and peripheral troubleshooting, " +
-      "networking and Linux administration.",
-    "I run a self-hosted Linux and Synology home lab with Docker services, a WireGuard VPN, a reverse proxy with " +
-      "SSL, RAID storage, backups and monitoring. My first degree was in engineering, with a grounding in " +
-      "electronics and microcontrollers.",
+  // One paragraph, kept short; the tags below carry the details.
+  intro:
+    "I'm an IT support and infrastructure technician in Perth, with a Master of Information Technology " +
+    "from UWA and a first degree in engineering. I like the hands-on side of IT: imaging and deploying " +
+    "Windows, chasing down hardware and network faults, and running my own Linux and Synology home lab " +
+    "with Docker, WireGuard, a reverse proxy, RAID storage and monitoring.",
+  // Highlights: what I'm good at and where I come from.
+  tags: [
+    "Master of IT · UWA, Distinction",
+    "Windows imaging & deployment",
+    "Hardware & peripheral support",
+    "Networking & Linux",
+    "Self-hosted home lab",
+    "Engineering background",
+    "Full Australian work rights",
+    "FIFO & on-call ready",
+    "Mandarin & English",
   ],
-  facts: [
-    { label: "Based in", value: "Perth, WA" },
-    { label: "Work rights", value: "Full Australian work rights" },
-    { label: "Open to", value: "Perth, regional WA and FIFO rosters, including on-call support" },
-    { label: "Languages", value: "Mandarin Chinese (native), English (advanced)" },
-  ],
+  // Set to a Portrait once the photo is in public/ (null shows a quiet placeholder).
+  portrait: null as Portrait | null,
   contacts: [
     { label: "Email", value: "vincent@vincentwang.au", href: "mailto:vincent@vincentwang.au" },
     {

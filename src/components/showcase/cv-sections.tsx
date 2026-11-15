@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,6 +18,8 @@ import {
   projects,
   skillGroups,
 } from "@/lib/site-data";
+import { cn } from "@/lib/utils";
+import { Reveal } from "./reveal";
 import { Section } from "./section";
 
 // CV content for the middle of the home page (between the hero and the globe).
@@ -51,39 +55,93 @@ function EntryHead({ title, sub, when }: { title: string; sub: string; when: str
   );
 }
 
+// Stagger index for .reveal children (multiplied by the step in globals.css).
+const at = (i: number) => ({ "--i": i }) as CSSProperties;
+
+// The portrait as a print, like the photos further down: white border, slight tilt that
+// straightens on hover. Shown 3:4; a 4:3 original is cropped by object-cover around
+// `position`, so the file needn't be re-exported. Until a photo is set, a quiet monogram.
+function PortraitPrint({ className }: { className?: string }) {
+  const p = profile.portrait;
+  return (
+    <figure className={cn("reveal reveal-photo", className)} style={at(1.5)}>
+      <div className="-rotate-2 rounded-[3px] bg-white p-1.5 shadow-md ring-1 ring-black/5 transition-[rotate,box-shadow] duration-500 ease-out hover:rotate-0 hover:shadow-xl motion-reduce:transition-none dark:bg-neutral-200">
+        <div className="relative aspect-3/4 overflow-hidden rounded-[2px] bg-muted">
+          {p ? (
+            <Image
+              src={p.src}
+              alt={p.alt}
+              fill
+              sizes="(min-width: 768px) 14rem, 11rem"
+              style={{ objectPosition: p.position ?? "50% 35%" }}
+              className="reveal-zoom object-cover"
+            />
+          ) : (
+            <div
+              role="img"
+              aria-label="Portrait coming soon"
+              className="flex h-full items-center justify-center font-mono text-2xl tracking-widest text-neutral-400"
+            >
+              VW
+            </div>
+          )}
+        </div>
+      </div>
+    </figure>
+  );
+}
+
 export function About() {
   return (
-    <Section id="about" command="cat about.md" title="About">
-      <p className="text-sm font-medium">{profile.headline}</p>
-      <div className="mt-3 flex flex-col gap-3 text-sm leading-relaxed text-foreground/80">
-        {profile.summary.map((p) => (
-          <p key={p}>{p}</p>
-        ))}
-      </div>
-      <dl className="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-        {profile.facts.map((f) => (
-          <div key={f.label}>
-            <dt className="text-xs text-muted-foreground">{f.label}</dt>
-            <dd>{f.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <ul className="mt-6 flex flex-wrap gap-2">
-        {profile.contacts.map((c) => (
-          <li key={c.label}>
-            <a
-              href={c.href}
-              {...(c.href.startsWith("http") && { target: "_blank", rel: "noreferrer" })}
-              className="group inline-flex min-h-9 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors hover:bg-muted"
+    <Reveal>
+      <Section id="about" command="cat about.md" title="About">
+        <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-start sm:gap-10 md:grid-cols-[minmax(0,1fr)_14rem]">
+          <div className="min-w-0">
+            <p
+              style={at(1)}
+              className="reveal text-[1.0625rem] leading-relaxed text-pretty text-foreground/85 sm:text-lg sm:leading-relaxed"
             >
-              <span className="text-muted-foreground">{c.label}</span>
-              <span className="font-mono text-xs">{c.value}</span>
-              <ArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:-translate-y-px group-hover:translate-x-px" />
-            </a>
-          </li>
-        ))}
-      </ul>
-    </Section>
+              {profile.intro}
+            </p>
+
+            <ul aria-label="Highlights" className="mt-6 flex flex-wrap gap-2">
+              {profile.tags.map((tag, n) => (
+                <li
+                  key={tag}
+                  style={at(2 + n * 0.35)}
+                  className="reveal inline-flex h-8 items-center rounded-full border bg-muted/50 px-3 text-sm"
+                >
+                  {tag}
+                </li>
+              ))}
+            </ul>
+
+            <ul
+              aria-label="Contact"
+              style={at(2 + profile.tags.length * 0.35 + 0.5)}
+              className="reveal mt-8 flex flex-wrap gap-x-5 gap-y-2 border-t border-dashed pt-5"
+            >
+              {profile.contacts.map((c) => (
+                <li key={c.label}>
+                  <a
+                    href={c.href}
+                    {...(c.href.startsWith("http") && { target: "_blank", rel: "noreferrer" })}
+                    className="group inline-flex min-h-9 items-center gap-1.5 text-sm transition-colors hover:text-foreground"
+                  >
+                    <span className="text-muted-foreground">{c.label}</span>
+                    <span className="font-mono text-xs">{c.value}</span>
+                    <ArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:-translate-y-px group-hover:translate-x-px" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Phones: the photo comes first, at a modest width. */}
+          <PortraitPrint className="order-first w-40 sm:order-none sm:w-auto" />
+        </div>
+      </Section>
+    </Reveal>
   );
 }
 

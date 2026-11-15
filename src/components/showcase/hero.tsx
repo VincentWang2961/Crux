@@ -41,7 +41,8 @@ export function Hero() {
         <SiteBar />
       </div>
 
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-5 pb-[6svh] sm:justify-center sm:gap-8 sm:pb-0">
+      {/* `.hero-exit` (globals.css) eases this block up and out as the page scrolls on. */}
+      <div className="hero-exit mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-5 pb-[6svh] sm:justify-center sm:gap-8 sm:pb-0">
         <p className="text-xs text-muted-foreground sm:text-sm" aria-label="$ whoami">
           <Typed text="$ whoami" start={T.prompt} step={T.promptStep} />
         </p>

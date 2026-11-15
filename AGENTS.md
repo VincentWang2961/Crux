@@ -105,6 +105,24 @@ Section bodies are separated by top borders.
 - The CV's phone number and referees are deliberately **not** published on the site.
 - Keep the look monochrome and quiet: muted labels, mono dates, outline/secondary badges, no colour accents.
 
+**About** (`About` in `cv-sections.tsx`)
+- One short paragraph (`profile.intro`), a row of highlight tags (`profile.tags`), then the contact links.
+- **Portrait:** `profile.portrait` (`src`, `alt`, `width`, `height`, optional `position`). It is shown as a
+  print like the photos further down: white border, slight tilt that straightens on hover.
+  - The frame is always 3:4. A 4:3 original needs no re-export: `object-cover` crops it, centred on
+    `position` (CSS `object-position`, default `50% 35%`).
+  - Right column from `sm` up (11 rem, 14 rem from `md`); above the paragraph on phones (10 rem wide).
+  - While `portrait` is `null`, a "VW" monogram placeholder is shown.
+- **Scroll-in:** the section is wrapped in `<Reveal>` (`reveal.tsx`). Every `.reveal` inside it rises,
+  fades and un-blurs on an expo-out curve the first time the section enters the viewport, staggered by
+  `--i` × 70 ms. The photo also grows from 94 % and its image settles from 112 %.
+  - Server HTML is fully visible; the block is only hidden ("armed") on the client when it starts below
+    the fold. No JS or reduced motion means no animation.
+  - `Section` headers carry `.reveal`, so wrapping any other section in `<Reveal>` animates it the same way.
+- **Hero hand-off:** the hero's content block has `.hero-exit`, a scroll-driven animation
+  (`animation-timeline: scroll(root)`, over the first 70 svh) that eases it up, shrinks it to 96 % and
+  fades it out as About comes in. It is skipped where scroll timelines are unsupported.
+
 ## Site bar (every page)
 
 `src/components/site/site-bar.tsx` is the single top bar, used by the hero and by every `/posts` page,

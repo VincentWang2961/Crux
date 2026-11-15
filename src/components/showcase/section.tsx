@@ -20,7 +20,8 @@ export function Section({
       aria-labelledby={`${id}-title`}
       className="grid scroll-mt-8 gap-5 border-t pt-8 md:grid-cols-[10rem_1fr] md:gap-10 md:pt-10"
     >
-      <header>
+      {/* `.reveal` only animates inside a <Reveal> (reveal.tsx); elsewhere it does nothing. */}
+      <header className="reveal">
         <p aria-hidden className="font-mono text-xs text-muted-foreground">
           $ {command}
         </p>
