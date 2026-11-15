@@ -88,12 +88,17 @@ export function About() {
       <Section id="about" command="cat about.md" title="About">
         <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-start sm:gap-10 md:grid-cols-[minmax(0,1fr)_14rem]">
           <div className="min-w-0">
-            <p
-              style={at(1)}
-              className="reveal text-[1.0625rem] leading-relaxed text-pretty text-foreground/85 sm:text-lg sm:leading-relaxed"
-            >
-              {profile.intro}
-            </p>
+            <div className="flex flex-col gap-4">
+              {profile.intro.map((para, n) => (
+                <p
+                  key={n}
+                  style={at(1 + n * 0.5)}
+                  className="reveal text-[1.0625rem] leading-relaxed text-pretty text-foreground/85 sm:text-lg sm:leading-relaxed"
+                >
+                  {para}
+                </p>
+              ))}
+            </div>
 
             <ul aria-label="Highlights" className="mt-6 flex flex-wrap gap-2">
               {profile.tags.map((tag, n) => (

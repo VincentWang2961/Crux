@@ -4,10 +4,11 @@
 export const hero = {
   name: "Vincent Wang",
   greeting: "Hi, I'm",
-  roles: ["IT Support & Service Desk", "Site & Infrastructure Support", "Home-lab Tinkerer"],
+  roles: ["IT Support & Developer", "Vehicle Engineering Grad", "Gamer & Photographer"],
   intro:
-    "Master of IT graduate from UWA, based in Perth. I keep Windows fleets, networks and Linux " +
-    "servers running, and look after a small self-hosted fleet across Australia and Asia.",
+    "Master of IT graduate from UWA with a background in vehicle engineering, based in Perth. " +
+    "I fix hardware, build for the web and run servers around the world, and I'm looking for " +
+    "a full-time IT role in Australia or New Zealand.",
   links: {
     github: "https://github.com/VincentWang2961",
   },
@@ -30,24 +31,26 @@ export type Portrait = {
 };
 
 export const profile = {
-  // One paragraph, kept short; the tags below carry the details.
-  intro:
-    "I'm an IT support and infrastructure technician in Perth, with a Master of Information Technology " +
-    "from UWA and a first degree in engineering. I like the hands-on side of IT: imaging and deploying " +
-    "Windows, chasing down hardware and network faults, and running my own Linux and Synology home lab " +
-    "with Docker, WireGuard, a reverse proxy, RAID storage and monitoring.",
-  // Highlights: what I'm good at and where I come from.
-  tags: [
-    "Master of IT · UWA, Distinction",
-    "Windows imaging & deployment",
-    "Hardware & peripheral support",
-    "Networking & Linux",
-    "Self-hosted home lab",
-    "Engineering background",
-    "Full Australian work rights",
-    "FIFO & on-call ready",
-    "Mandarin & English",
+  // Up to three short paragraphs; the tags below carry the headlines.
+  intro: [
+    "Hi, I'm Vincent, an IT support specialist and developer based in Perth, Western Australia. " +
+      "I hold a Master of Information Technology from the University of Western Australia, majoring in " +
+      "Software Engineering and graduating with a GPA of 6/7. I build and maintain modern websites, have " +
+      "worked on IoT projects, and am at home with all kinds of electronic hardware. Before IT, I studied " +
+      "Automotive Service Engineering at Jiangsu University of Technology, which gave me a solid grounding " +
+      "in mechanics and a very hands-on approach to problems.",
+    "These days I work part-time as an Assistant Department Manager at Woolworths, where I run the night " +
+      "shift, and as a casual data annotator with Outlier, reviewing and labelling data used to train AI " +
+      "models. Alongside that, I look after servers spread around the world and a small collection of " +
+      "network gear at home. I'm now looking for a full-time role in IT support or DevOps, and would be " +
+      "just as happy working as a developer. I love the working culture and the outdoors in Australia and " +
+      "New Zealand, so I'm open to opportunities anywhere in either country.",
+    "Away from the keyboard, I'm usually outside: hiking a new trail, swimming, or playing badminton. I " +
+      "rarely go anywhere without a camera, and some of my favourite shots from the road are further down " +
+      "this page. When I'm in, I'm gaming, whether on Steam, PlayStation, Xbox or Switch.",
   ],
+  // Highlights: four at most.
+  tags: ["Information Technology", "Vehicle Engineering", "English & Mandarin", "Full Australian Work Rights"],
   // Set to a Portrait once the photo is in public/ (null shows a quiet placeholder).
   portrait: {
     src: "/portrait.jpg",

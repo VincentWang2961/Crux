@@ -106,7 +106,7 @@ Section bodies are separated by top borders.
 - Keep the look monochrome and quiet: muted labels, mono dates, outline/secondary badges, no colour accents.
 
 **About** (`About` in `cv-sections.tsx`)
-- One short paragraph (`profile.intro`), a row of highlight tags (`profile.tags`), then the contact links.
+- Up to three short paragraphs (`profile.intro`), at most four highlight tags (`profile.tags`), then the contact links.
 - **Portrait:** `profile.portrait` (`src`, `alt`, `width`, `height`, optional `position`, plus `place`
   lines and a `taken` date for the back). The file is `public/portrait.jpg`. `portrait-card.tsx` draws it
   as a white-bordered print.
