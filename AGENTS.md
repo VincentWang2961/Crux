@@ -157,10 +157,13 @@ Left to right:
 So all green means "online and no outage this week"; a bad day stays orange or red on the third
 light for a week rather than being averaged away. Hovering shows each light's figure (`title`), and
 the group has a full spoken label.
-- **Breathing:** all three lights breathe together (`uptime-breathe`, 2.8 s, opacity 0.45 → 1, the
-  same animation on each `.uptime-dot`, so they stay in sync).
+- **Breathing wave:** the lights breathe one after another from left to right, then rest and start
+  again from the left.
+  - Each light rises from 0.4 to full opacity and back (`uptime-breathe`).
+  - The next light starts `--uptime-step` (0.4 s) later; the light's index comes from `--i`.
+  - The whole cycle (`--uptime-cycle`) is 3 s.
 - **HDR peak:** on HDR displays (`@media (dynamic-range: high)`), an HDR glow sprite fades in only
-  around the brightest moment of each breath (`uptime-peak`). Brighter-than-white CSS colours don't
+  around each light's brightest moment (`uptime-peak`, same delays). Brighter-than-white CSS colours don't
   ship in any browser yet, so the native route is an HDR *image*. The sprites are
   `public/uptime/hdr-<colour>.avif`: 64×64, about 850 bytes each, PQ transfer, BT.2020, 10-bit with
   alpha. Each has a disc peaking at 3× SDR reference white and a soft halo.

@@ -498,16 +498,22 @@ html.theme-switching::view-transition-new(root) {
   transition: scale 1.6s var(--reveal-ease) 0.1s;
 }
 
-/* Uptime lights on project cards (uptime-dots.tsx): the three lights breathe together,
-   and on HDR displays an HDR sprite (PQ AVIF, brighter than SDR white) fades in only around
-   the brightest moment of each breath. Same duration and start, so they stay in sync. */
+/* Uptime lights on project cards (uptime-dots.tsx): a wave that runs left to right. Each
+   light rises from dim to bright and back, the next one starting UPTIME_STEP later, then all
+   rest until the cycle restarts from the left. On HDR displays an HDR sprite (PQ AVIF,
+   brighter than SDR white) fades in only around each light's brightest moment. The light's
+   index comes from --i; the delays stay within one cycle, so the wave never drifts. */
 @keyframes uptime-breathe {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 1; }
+  0%, 45%, 100% { opacity: 0.4; }
+  20% { opacity: 1; }
 }
 @keyframes uptime-peak {
-  0%, 30%, 70%, 100% { opacity: 0; }
-  50% { opacity: 1; }
+  0%, 10%, 30%, 100% { opacity: 0; }
+  20% { opacity: 1; }
+}
+.uptime-light {
+  --uptime-cycle: 3s;
+  --uptime-step: 0.4s;
 }
 .uptime-hdr {
   display: none;
@@ -515,12 +521,13 @@ html.theme-switching::view-transition-new(root) {
 }
 @media (prefers-reduced-motion: no-preference) {
   .uptime-dot {
-    animation: uptime-breathe 2.8s ease-in-out infinite;
+    opacity: 0.4;
+    animation: uptime-breathe var(--uptime-cycle) ease-in-out calc(var(--i, 0) * var(--uptime-step)) infinite backwards;
   }
   @media (dynamic-range: high) {
     .uptime-hdr {
       display: block;
-      animation: uptime-peak 2.8s ease-in-out infinite;
+      animation: uptime-peak var(--uptime-cycle) ease-in-out calc(var(--i, 0) * var(--uptime-step)) infinite backwards;
     }
   }
 }
