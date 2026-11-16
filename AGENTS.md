@@ -155,8 +155,21 @@ Left to right:
 | 7 days | the **worst** rolling 24 h day of the last 7 days | ≥ 99.9 % | ≥ 99 % | < 99 % |
 
 So all green means "online and no outage this week"; a bad day stays orange or red on the third
-light for a week rather than being averaged away. The "now" light pulses while up. Hovering shows
-each light's figure (`title`), and the group has a full spoken label.
+light for a week rather than being averaged away. Hovering shows each light's figure (`title`), and
+the group has a full spoken label.
+- **Breathing:** all three lights breathe together (`uptime-breathe`, 2.8 s, opacity 0.45 → 1, the
+  same animation on each `.uptime-dot`, so they stay in sync).
+- **HDR peak:** on HDR displays (`@media (dynamic-range: high)`), an HDR glow sprite fades in only
+  around the brightest moment of each breath (`uptime-peak`). Brighter-than-white CSS colours don't
+  ship in any browser yet, so the native route is an HDR *image*. The sprites are
+  `public/uptime/hdr-<colour>.avif`: 64×64, about 850 bytes each, PQ transfer, BT.2020, 10-bit with
+  alpha. Each has a disc peaking at 3× SDR reference white and a soft halo.
+  - They are drawn with a plain `<img>` with `dynamic-range-limit: no-limit`. next/image would
+    re-encode them and drop the HDR metadata.
+  - SDR screens skip the sprite entirely, and reduced motion turns off both the breathing and the HDR
+    peak.
+  - Regenerate the sprites with `scripts/gen-uptime-hdr.py` plus `avifenc`; the usage is in the
+    script's header.
 - `src/lib/uptime.ts` collects every card's monitor ID and fetches them all in **one**
   `POST https://api.uptimerobot.com/v2/getMonitors` call (`monitors=id-id`, `custom_uptime_ranges` for
   seven rolling days), server-side, at most once per 5 minutes per process. A failed call keeps the

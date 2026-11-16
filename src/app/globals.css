@@ -497,3 +497,30 @@ html.theme-switching::view-transition-new(root) {
 [data-reveal="shown"] .reveal-zoom {
   transition: scale 1.6s var(--reveal-ease) 0.1s;
 }
+
+/* Uptime lights on project cards (uptime-dots.tsx): the three lights breathe together,
+   and on HDR displays an HDR sprite (PQ AVIF, brighter than SDR white) fades in only around
+   the brightest moment of each breath. Same duration and start, so they stay in sync. */
+@keyframes uptime-breathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+@keyframes uptime-peak {
+  0%, 30%, 70%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+.uptime-hdr {
+  display: none;
+  dynamic-range-limit: no-limit;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .uptime-dot {
+    animation: uptime-breathe 2.8s ease-in-out infinite;
+  }
+  @media (dynamic-range: high) {
+    .uptime-hdr {
+      display: block;
+      animation: uptime-peak 2.8s ease-in-out infinite;
+    }
+  }
+}
