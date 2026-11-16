@@ -1,18 +1,18 @@
 import { Suspense, type CSSProperties } from "react";
 import { connection } from "next/server";
 import { getUptime, type UptimeLevel, type UptimeSignal } from "@/lib/uptime";
-import { cn } from "@/lib/utils";
 
 // Three status lights for one monitored service (see src/lib/uptime.ts for what each means):
 // Now · last 24 hours · worst day of the last 7 days. Bright green, orange or red only.
-// They breathe in a wave from left to right; on HDR screens each peaks brighter than SDR white.
+// They breathe in a slow wave from left to right; on HDR screens each peaks brighter than SDR white.
 // Rendered at request time inside Suspense, so the Projects section stays in the static
 // shell; without data (no API key, API down) nothing is shown.
 
-const DOT: Record<UptimeLevel, string> = {
-  up: "bg-green-500 shadow-[0_0_6px_var(--color-green-500)]",
-  degraded: "bg-orange-500 shadow-[0_0_6px_var(--color-orange-500)]",
-  down: "bg-red-500 shadow-[0_0_6px_var(--color-red-500)]",
+// The light's colour; its glow, hot centre and breathing are in `.uptime-dot` (globals.css).
+const COLOR: Record<UptimeLevel, string> = {
+  up: "var(--color-green-500)",
+  degraded: "var(--color-orange-500)",
+  down: "var(--color-red-500)",
 };
 
 // HDR glow sprite per colour (PQ / BT.2020 AVIF, from scripts/gen-uptime-hdr.py). Shown
@@ -46,8 +46,8 @@ async function Dots({ monitor, subject }: Props) {
       className="inline-flex items-center gap-1.5"
     >
       {signals.map((s, i) => (
-        <span key={s.label} style={{ "--i": i } as CSSProperties} className="uptime-light relative size-2">
-          <span className={cn("uptime-dot absolute inset-0 rounded-full", DOT[s.level])} />
+        <span key={s.label} style={{ "--i": i, "--c": COLOR[s.level] } as CSSProperties} className="uptime-light relative size-2">
+          <span className="uptime-dot absolute inset-0 rounded-full" />
           {/* Plain <img>: next/image would re-encode the AVIF and lose its HDR metadata. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

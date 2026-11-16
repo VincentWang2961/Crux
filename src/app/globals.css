@@ -498,36 +498,57 @@ html.theme-switching::view-transition-new(root) {
   transition: scale 1.6s var(--reveal-ease) 0.1s;
 }
 
-/* Uptime lights on project cards (uptime-dots.tsx): a wave that runs left to right. Each
-   light rises from dim to bright and back, the next one starting UPTIME_STEP later, then all
-   rest until the cycle restarts from the left. On HDR displays an HDR sprite (PQ AVIF,
-   brighter than SDR white) fades in only around each light's brightest moment. The light's
-   index comes from --i; the delays stay within one cycle, so the wave never drifts. */
-@keyframes uptime-breathe {
-  0%, 45%, 100% { opacity: 0.4; }
-  20% { opacity: 1; }
+/* Uptime lights on project cards (uptime-dots.tsx).
+   One number per light, --breath (0 = rest, 1 = peak), drives everything: core brightness,
+   a slight swell, a white-hot centre, the glow and, on HDR screens, an HDR sprite. It follows
+   the classic "breathing LED" curve, exp(sin t), normalised to 0..1, sampled into linear():
+   a slow inhale, a short bright peak and a long dim rest, which reads as calm rather than
+   blinking. One breath per --uptime-cycle (4 s, 15 breaths a minute, within the human
+   12-20 range). Each light runs --uptime-step behind the one on its left (delays from --i),
+   so the light flows left to right and then the row rests before the next wave.
+   Registered with @property so the number interpolates smoothly. */
+@property --breath {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.8;
 }
-@keyframes uptime-peak {
-  0%, 10%, 30%, 100% { opacity: 0; }
-  20% { opacity: 1; }
+@keyframes uptime-breathe {
+  from { --breath: 0; }
+  to { --breath: 1; }
 }
 .uptime-light {
-  --uptime-cycle: 3s;
-  --uptime-step: 0.4s;
+  --uptime-cycle: 4s;
+  --uptime-step: 0.45s;
+}
+.uptime-dot {
+  opacity: calc(0.35 + 0.65 * var(--breath));
+  scale: calc(0.88 + 0.12 * var(--breath));
+  background: radial-gradient(
+    circle at 50% 45%,
+    color-mix(in oklab, var(--c), white calc(var(--breath) * 45%)),
+    var(--c) 70%
+  );
+  box-shadow: 0 0 calc(2px + 7px * var(--breath)) calc(var(--breath) * 1px)
+    color-mix(in oklab, var(--c) calc(25% + 55% * var(--breath)), transparent);
 }
 .uptime-hdr {
   display: none;
   dynamic-range-limit: no-limit;
+  opacity: clamp(0, (var(--breath) - 0.6) / 0.4, 1); /* only the top of each breath */
 }
 @media (prefers-reduced-motion: no-preference) {
-  .uptime-dot {
-    opacity: 0.4;
-    animation: uptime-breathe var(--uptime-cycle) ease-in-out calc(var(--i, 0) * var(--uptime-step)) infinite backwards;
+  .uptime-light {
+    /* The keyframes run --breath from 0 to 1; the linear() timing function is the breath
+       itself, mapping progress onto the curve, so --breath rises to 1 at mid-cycle and falls
+       back. Reduced motion: no animation, a steady --breath of 0.8. */
+    animation: uptime-breathe var(--uptime-cycle) infinite;
+    animation-timing-function: linear(0, 0.005, 0.022, 0.053, 0.102, 0.172, 0.269, 0.395, 0.545, 0.706, 0.855, 0.961, 1, 0.961, 0.855, 0.706, 0.545, 0.395, 0.269, 0.172, 0.102, 0.053, 0.022, 0.005, 0);
+    /* Negative delays: the wave is already running on load, the leftmost light leading. */
+    animation-delay: calc((var(--i, 0) - 3) * var(--uptime-step));
   }
   @media (dynamic-range: high) {
     .uptime-hdr {
       display: block;
-      animation: uptime-peak var(--uptime-cycle) ease-in-out calc(var(--i, 0) * var(--uptime-step)) infinite backwards;
     }
   }
 }

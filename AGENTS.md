@@ -157,13 +157,24 @@ Left to right:
 So all green means "online and no outage this week"; a bad day stays orange or red on the third
 light for a week rather than being averaged away. Hovering shows each light's figure (`title`), and
 the group has a full spoken label.
-- **Breathing wave:** the lights breathe one after another from left to right, then rest and start
-  again from the left.
-  - Each light rises from 0.4 to full opacity and back (`uptime-breathe`).
-  - The next light starts `--uptime-step` (0.4 s) later; the light's index comes from `--i`.
-  - The whole cycle (`--uptime-cycle`) is 3 s.
+- **Breathing wave:** a slow wave of light flows left to right, then the row rests until the
+  next wave.
+  - **One value drives everything:** each light animates one registered number, `--breath`
+    (`@property`, 0 = rest, 1 = peak). It sets:
+    - core opacity, 0.35 → 1;
+    - a slight swell, scale 0.88 → 1;
+    - a white-hot centre, mixing in up to 45 % white;
+    - the coloured glow's radius and strength;
+    - on HDR screens, the HDR sprite's opacity, which appears only above 0.6.
+  - **Curve:** the "breathing LED" curve, exp(sin t) normalised to 0–1, sampled into a `linear()`
+    timing function. It gives a slow inhale, a short bright peak and a long dim rest.
+  - **Timing:** `--uptime-cycle` is 4 s, which is 15 breaths a minute, within the human 12–20
+    range. `--uptime-step` is 0.45 s: each light runs that far behind the one on its left, using
+    negative delays from `--i`, so the wave is already moving on load.
+  - **Reduced motion:** no animation; `--breath` stays at 0.8.
+  - **Colour:** each light's colour comes in through `--c`.
 - **HDR peak:** on HDR displays (`@media (dynamic-range: high)`), an HDR glow sprite fades in only
-  around each light's brightest moment (`uptime-peak`, same delays). Brighter-than-white CSS colours don't
+  around each light's brightest moment (driven by `--breath`). Brighter-than-white CSS colours don't
   ship in any browser yet, so the native route is an HDR *image*. The sprites are
   `public/uptime/hdr-<colour>.avif`: 64×64, about 850 bytes each, PQ transfer, BT.2020, 10-bit with
   alpha. Each has a disc peaking at 3× SDR reference white and a soft halo.
