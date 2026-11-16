@@ -11,7 +11,8 @@
 // The API is called at most once per CACHE_MS per server process (UptimeRobot checks the
 // site every 5 minutes anyway, and the free API is rate limited). Without
 // UPTIMEROBOT_API_KEY, or when the API fails, getSiteUptime() returns null and the dots
-// are simply not shown.
+// are simply not shown. UPTIMEROBOT_MONITOR_ID picks which monitor to read (the account may
+// watch other hosts too); without it the account's first monitor is used.
 
 export type UptimeLevel = "up" | "degraded" | "down";
 
@@ -44,7 +45,7 @@ const byRatio = (n: number): UptimeLevel => (n >= GOOD ? "up" : n >= FAIR ? "deg
 
 type Monitor = { status: number; custom_uptime_ranges?: string };
 
-async function fetchUptime(key: string): Promise<SiteUptime | null> {
+async function fetchUptime(key: string, monitorId?: string): Promise<SiteUptime | null> {
   // Rolling 24 h windows, newest first: [now - 24 h, now], [now - 48 h, now - 24 h], …
   const now = Math.floor(Date.now() / 1000);
   const ranges = Array.from({ length: 7 }, (_, k) => `${now - DAY * (k + 1)}_${now - DAY * k}`).join("-");
@@ -52,7 +53,12 @@ async function fetchUptime(key: string): Promise<SiteUptime | null> {
   const res = await fetch(API, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded", "cache-control": "no-cache" },
-    body: new URLSearchParams({ api_key: key, format: "json", custom_uptime_ranges: ranges }),
+    body: new URLSearchParams({
+      api_key: key,
+      format: "json",
+      custom_uptime_ranges: ranges,
+      ...(monitorId && { monitors: monitorId }),
+    }),
     cache: "no-store",
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
@@ -87,8 +93,9 @@ async function fetchUptime(key: string): Promise<SiteUptime | null> {
 export async function getSiteUptime(): Promise<SiteUptime | null> {
   const key = process.env.UPTIMEROBOT_API_KEY;
   if (!key) return null;
+  const monitorId = process.env.UPTIMEROBOT_MONITOR_ID?.trim() || undefined;
   if (cache && Date.now() - cache.at < CACHE_MS) return cache.value;
-  pending ??= fetchUptime(key)
+  pending ??= fetchUptime(key, monitorId)
     .catch(() => null)
     .then((value) => {
       // Keep the last good reading through a brief API failure.
