@@ -14,8 +14,8 @@
 // - Print size: every print has the same long edge L; its short edge follows the photo's
 //   aspect ratio. Rows are tried from 1 upwards: the shuffled prints are split into R
 //   balanced rows and L is chosen so the fullest row spans the width with neighbours
-//   overlapping by about OVERLAP of a print. The first R that gives L >= MIN_LONG_EDGE wins,
-//   and L is capped at MAX_LONG_EDGE.
+//   overlapping by about OVERLAP of a print. The first R that gives L >= max(MIN_LONG_EDGE,
+//   TARGET_SHARE of the width) wins, and L is capped at MAX_LONG_EDGE.
 // - Placement: each row is justified across the width (fuller rows overlap more, emptier
 //   rows overlap less), rows overlap vertically by ROW_OVERLAP, and every print is nudged
 //   by a random jitter and given a random tilt.
@@ -49,7 +49,8 @@ export const SPREAD = {
   MIN_VISIBLE: 0.4, // share of each print that no other print covers (the hard floor asked for is 0.25)
   OVERLAP: 0.2, // target overlap between neighbours in a row, as a share of print width
   ROW_OVERLAP: 0.12, // rows overlap by this share of the row height
-  MIN_LONG_EDGE: 150, // px; below this a row is split
+  MIN_LONG_EDGE: 150, // px; below this a row is split, whatever the width
+  TARGET_SHARE: 0.2, // a row is also split while prints are smaller than this share of the width
   MAX_LONG_EDGE: 280, // px
   MAX_TILT: 6, // degrees
   MIN_TILT: 1.5, // degrees; keeps every print visibly askew
@@ -158,7 +159,10 @@ export function layoutSpread(ratios: number[], width: number, seed: number): Spr
       rand,
     );
 
-    // Fewest rows that keep prints at a sensible size.
+    // Fewest rows that keep prints at a sensible size: at least MIN_LONG_EDGE, and on wide
+    // screens at least TARGET_SHARE of the width, so a desktop gets fewer, larger prints per
+    // row rather than one long strip of small ones.
+    const minL = Math.max(SPREAD.MIN_LONG_EDGE, Math.min(width * SPREAD.TARGET_SHARE, SPREAD.MAX_LONG_EDGE));
     let rows: number[][] = [ids];
     let L = 0;
     for (let R = 1; R <= n; R++) {
@@ -170,7 +174,7 @@ export function layoutSpread(ratios: number[], width: number, seed: number): Spr
           return usable / (sum - overlap);
         }),
       );
-      if (L >= SPREAD.MIN_LONG_EDGE) break;
+      if (L >= minL) break;
     }
     L = Math.min(L, SPREAD.MAX_LONG_EDGE);
 

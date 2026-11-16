@@ -271,8 +271,9 @@ correctly.
   - Every print has the same long edge; the short edge follows its aspect ratio.
   - Rows are tried from 1 upwards. The shuffled prints are split into balanced rows, and the long edge
     is chosen so the fullest row spans the width with neighbours overlapping by about `OVERLAP`. The
-    first row count that keeps prints at least `MIN_LONG_EDGE` wins (`MAX_LONG_EDGE` caps it). Phones
-    get two prints per row, desktops one or two rows.
+    first row count that keeps prints at least `MIN_LONG_EDGE` px and at least `TARGET_SHARE` (20 %) of
+    the width wins (`MAX_LONG_EDGE` caps it). Phones get two prints per row; desktops get two rows of
+    four at the full 280 px, rather than one strip of small prints.
   - Rows are justified across the width and overlap vertically by `ROW_OVERLAP`. Each print gets a
     random jitter and a tilt of `MIN_TILT`–`MAX_TILT` degrees.
   - **Visibility guarantee:** at least `MIN_VISIBLE` (40 %) of every print is covered by no other
