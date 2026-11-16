@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { getSiteUptime, type UptimeLevel, type UptimeSignal } from "@/lib/uptime";
+import { getUptime, type UptimeLevel, type UptimeSignal } from "@/lib/uptime";
 import { cn } from "@/lib/utils";
 
-// Three status lights for this website (see src/lib/uptime.ts for what each one means):
+// Three status lights for one monitored service (see src/lib/uptime.ts for what each means):
 // Now · last 24 hours · worst day of the last 7 days. Bright green, orange or red only.
 // Rendered at request time inside Suspense, so the Projects section stays in the static
 // shell; without data (no API key, API down) nothing is shown.
@@ -20,9 +20,11 @@ const SUMMARY: Record<UptimeLevel, string> = {
   down: "offline",
 };
 
-async function Dots() {
+type Props = { monitor: string; subject: string };
+
+async function Dots({ monitor, subject }: Props) {
   await connection();
-  const uptime = await getSiteUptime();
+  const uptime = await getUptime(monitor);
   if (!uptime) return null;
   const signals: UptimeSignal[] = [uptime.now, uptime.day, uptime.week];
   const words = signals.map((s) => `${s.label}: ${s.detail}`).join(". ");
@@ -30,7 +32,7 @@ async function Dots() {
   return (
     <span
       role="img"
-      aria-label={`Website status, ${SUMMARY[uptime.now.level]}. ${words}.`}
+      aria-label={`${subject} status, ${SUMMARY[uptime.now.level]}. ${words}.`}
       title={signals.map((s) => `${s.label}: ${s.detail}`).join("\n")}
       className="inline-flex items-center gap-1.5"
     >
@@ -49,10 +51,10 @@ async function Dots() {
   );
 }
 
-export function UptimeDots() {
+export function UptimeDots(props: Props) {
   return (
     <Suspense fallback={null}>
-      <Dots />
+      <Dots {...props} />
     </Suspense>
   );
 }

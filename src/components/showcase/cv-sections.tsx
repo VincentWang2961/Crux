@@ -201,7 +201,7 @@ export function Projects() {
                     {p.kind}
                     {p.grade && ` · ${p.grade}`}
                   </span>
-                  {p.uptime && <UptimeDots />}
+                  {p.uptime && <UptimeDots {...p.uptime} />}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 text-sm leading-relaxed text-foreground/80">

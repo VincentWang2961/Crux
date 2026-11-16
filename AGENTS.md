@@ -135,10 +135,18 @@ Section bodies are separated by top borders.
   (`animation-timeline: scroll(root)`, over the first 70 svh) that eases it up, shrinks it to 96 % and
   fades it out as About comes in. It is skipped where scroll timelines are unsupported.
 
-### Projects → Crux status lights
+### Projects → status lights (Crux, home lab)
 
-The Crux card (first in `projects`, flagged `uptime: true`) shows three small lights in its
-description row: bright green, orange or red only. Left to right:
+A project card with `uptime: { monitor, subject }` in `projects` shows three small lights in its
+description row: bright green, orange or red only. `monitor` is the UptimeRobot monitor ID (the number
+in its dashboard URL); `subject` names it in the spoken label ("Website status, online. …").
+
+| Card | Monitor | Host |
+| --- | --- | --- |
+| Crux | `804588170` | vincentwang.au |
+| Personal Home Lab | `804697004` | nas.vincentwang.au |
+
+Left to right:
 
 | Light | Measures | Green | Orange | Red |
 | --- | --- | --- | --- | --- |
@@ -149,13 +157,14 @@ description row: bright green, orange or red only. Left to right:
 So all green means "online and no outage this week"; a bad day stays orange or red on the third
 light for a week rather than being averaged away. The "now" light pulses while up. Hovering shows
 each light's figure (`title`), and the group has a full spoken label.
-- `src/lib/uptime.ts` calls `POST https://api.uptimerobot.com/v2/getMonitors` (the monitor in
-  `UPTIMEROBOT_MONITOR_ID`, else the account's first; `custom_uptime_ranges` for seven rolling days) server-side, at most once per 5 minutes per
-  process; a failed call keeps the last good reading.
+- `src/lib/uptime.ts` collects every card's monitor ID and fetches them all in **one**
+  `POST https://api.uptimerobot.com/v2/getMonitors` call (`monitors=id-id`, `custom_uptime_ranges` for
+  seven rolling days), server-side, at most once per 5 minutes per process. A failed call keeps the
+  last good reading. `getUptime(monitorId)` reads from that shared result.
 - `uptime-dots.tsx` renders at request time (`connection()` inside `<Suspense>`), so the rest of
   Projects stays static. No key or no data → nothing is rendered.
-- Needs `UPTIMEROBOT_API_KEY`; set `UPTIMEROBOT_MONITOR_ID` when the account has more than one
-  monitor (see Environment variables).
+- Needs `UPTIMEROBOT_API_KEY` (see Environment variables). To add lights to another card, give it
+  `uptime: { monitor, subject }`; nothing else changes.
 
 ## Site bar (every page)
 
@@ -568,8 +577,7 @@ Nodes will later be connected by line segments (e.g. replication / network topol
 | `ADMIN_PASSWORD` | `/api/admin/login` | Admin password (typed after `admin@` over the hero name). Server-only. |
 | `ADMIN_SESSION_SECRET` | `admin-auth.ts` | At least 32 random characters; signs the admin session cookie. Changing it logs everyone out. |
 | `ANTHROPIC_API_KEY` | `npm run translate` only | Claude API key for post translation (local shell, not the container). |
-| `UPTIMEROBOT_API_KEY` | `src/lib/uptime.ts` | UptimeRobot **read-only** Main API key for the Crux card's status lights. Server-only; kept in the local `.env` and set by hand on the deployment, never committed. Unset → the lights are hidden. |
-| `UPTIMEROBOT_MONITOR_ID` | `src/lib/uptime.ts` | Numeric ID of the monitor for this site, so other monitors on the account are ignored. Optional; unset → the account's first monitor. |
+| `UPTIMEROBOT_API_KEY` | `src/lib/uptime.ts` | UptimeRobot **read-only** Main API key for the project cards' status lights. Server-only; kept in the local `.env` and set by hand on the deployment, never committed. Unset → the lights are hidden. |
 | `AVAILABILITY_DATA_DIR` | `availability.ts` | Folder for `availability.json` (default `./data`; `/app/data` in Docker). |
 
 ## Git conventions

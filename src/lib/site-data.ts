@@ -128,8 +128,11 @@ export type Project = {
   stack: string[];
   summary: string;
   href?: string;
-  /** Show this website's live uptime lights (UptimeRobot) on the card. */
-  uptime?: boolean;
+  /**
+   * Live uptime lights (UptimeRobot) on the card. `monitor` is the monitor's numeric ID
+   * (the number in its dashboard URL); `subject` names it in the spoken label.
+   */
+  uptime?: { monitor: string; subject: string };
 };
 
 export const projects: Project[] = [
@@ -142,11 +145,12 @@ export const projects: Project[] = [
       "My personal portfolio website (this website), built with Next.js and shadcn/ui, self-hosted in Docker " +
       "behind a Cloudflare Tunnel and redeployed automatically from GitHub.",
     href: "https://github.com/VincentWang2961/Crux",
-    uptime: true,
+    uptime: { monitor: "804588170", subject: "Website" }, // vincentwang.au
   },
   {
     name: "Personal Home Lab",
     kind: "Self-hosted infrastructure",
+    uptime: { monitor: "804697004", subject: "Home lab" }, // nas.vincentwang.au
     period: "Ongoing",
     stack: ["Ubuntu", "Synology NAS", "Docker", "WireGuard", "SSL/TLS"],
     summary:
