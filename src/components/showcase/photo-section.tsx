@@ -5,7 +5,7 @@ import { SectionHeader } from "./section";
 
 // Photography & travel: a loose, overlapping spread of prints below the globe. Unlike
 // the CV sections it is wider than the 64rem text column: the header lines up with the
-// other sections, and the spread gets up to 80rem (max-w-7xl). Side gutters grow on large
+// other sections, and the spread gets up to 68rem, so it sits only about 4.5rem further out on each side than the text. Side gutters grow on large
 // screens (lg:px-16, xl:px-24) so it never runs close to the edges of a full-screen window.
 export function PhotoSection() {
   return (
@@ -18,7 +18,7 @@ export function PhotoSection() {
           </div>
         </div>
         <div className="mt-6 px-[max(1.25rem,env(safe-area-inset-left))] sm:px-10 md:mt-8 lg:px-16 xl:px-24">
-          <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-[68rem]">
             <PhotoSpread photos={PHOTOS} />
           </div>
         </div>

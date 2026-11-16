@@ -24,7 +24,7 @@ export default function Home() {
           <Certifications />
           <GlobeSection />
         </div>
-        {/* Wider than the text column: the photo spread gets up to 80rem. */}
+        {/* Slightly wider than the text column: the photo spread gets up to 68rem. */}
         <PhotoSection />
         <footer className="px-5 pt-4 text-center text-xs text-muted-foreground">
           © 2026 Vincent Wang · Built with Next.js & shadcn/ui
