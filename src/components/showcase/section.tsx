@@ -20,16 +20,23 @@ export function Section({
       aria-labelledby={`${id}-title`}
       className="grid scroll-mt-8 gap-5 border-t pt-8 md:grid-cols-[10rem_1fr] md:gap-10 md:pt-10"
     >
-      {/* `.reveal` only animates inside a <Reveal> (reveal.tsx); elsewhere it does nothing. */}
-      <header className="reveal">
-        <p aria-hidden className="font-mono text-xs text-muted-foreground">
-          $ {command}
-        </p>
-        <h2 id={`${id}-title`} className="mt-1 text-lg font-semibold tracking-tight">
-          {title}
-        </h2>
-      </header>
+      <SectionHeader id={id} command={command} title={title} />
       <div className="min-w-0">{children}</div>
     </section>
+  );
+}
+
+/** The "$ command" line and title, shared by Section and full-width sections. */
+export function SectionHeader({ id, command, title }: { id: string; command: string; title: string }) {
+  return (
+    // `.reveal` only animates inside a <Reveal> (reveal.tsx); elsewhere it does nothing.
+    <header className="reveal">
+      <p aria-hidden className="font-mono text-xs text-muted-foreground">
+        $ {command}
+      </p>
+      <h2 id={`${id}-title`} className="mt-1 text-lg font-semibold tracking-tight">
+        {title}
+      </h2>
+    </header>
   );
 }

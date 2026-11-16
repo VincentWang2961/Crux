@@ -14,19 +14,19 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <main
-        id="content"
-        className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-12 px-[max(1.25rem,env(safe-area-inset-left))] py-10 sm:px-10 md:gap-14"
-      >
-        <About />
-        <Experience />
-        <Projects />
-        <Skills />
-        <Education />
-        <Certifications />
-        <GlobeSection />
+      <main id="content" className="flex w-full flex-1 flex-col gap-12 py-10 md:gap-14">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-[max(1.25rem,env(safe-area-inset-left))] sm:px-10 md:gap-14">
+          <About />
+          <Experience />
+          <Projects />
+          <Skills />
+          <Education />
+          <Certifications />
+          <GlobeSection />
+        </div>
+        {/* Full-bleed: the photo spread uses the whole page width. */}
         <PhotoSection />
-        <footer className="pt-4 text-center text-xs text-muted-foreground">
+        <footer className="px-5 pt-4 text-center text-xs text-muted-foreground">
           © 2026 Vincent Wang · Built with Next.js & shadcn/ui
         </footer>
       </main>

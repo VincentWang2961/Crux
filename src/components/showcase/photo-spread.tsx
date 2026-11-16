@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -13,12 +14,19 @@ import { flushSync } from "react-dom";
 import Image, { getImageProps } from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { Photo } from "@/lib/site-data";
+import { cn } from "@/lib/utils";
+import { layoutSpread, type SpreadLayout } from "@/lib/photo-layout";
 
 // Loose prints laid out like photos spread on a table.
-// - md and up: prints are absolutely positioned across the width. Each one is slightly
-//   rotated and offset, and neighbours overlap. Hovering or focusing a print lifts it
-//   to the top, straightens it and scales it up.
-// - Phones (no hover): a horizontal swipe strip of the same overlapping, tilted prints.
+// - Layout (src/lib/photo-layout.ts): the prints fill the full width of the page and wrap
+//   onto more rows when they don't fit, with a fresh random arrangement (order, jitter,
+//   tilt) on every visit; at least 40% of every print is never covered by another. The
+//   layout is computed on the client from the measured width (ResizeObserver) and reflows
+//   smoothly on resize with the same seed. Before that (server HTML, no JS) the prints sit
+//   in a plain centred wrap.
+// - Entrance: the first time the spread scrolls into view the prints are dealt onto the
+//   table one by one, flying out from a pile in the middle with an expo-out ease.
+// - Hovering or focusing a print lifts it to the top, straightens it and scales it up.
 // - Clicking or tapping a print opens it in a <dialog> lightbox that fills most of the
 //   screen. The rest of the page is blurred behind it (::backdrop).
 //   Esc, the close button, or clicking outside closes it; ←/→ steps between photos.
@@ -30,11 +38,12 @@ import type { Photo } from "@/lib/site-data";
 //   the spread is hidden while its photo is open, so it looks like the same object.
 //   With reduced motion it opens and closes instantly.
 
-// Long edge of a print; the short edge follows the photo's own aspect ratio.
-const LONG_EDGE_REM = 13;
-// Deterministic "messy" placement, cycled per print (rotation in deg, vertical offset in rem).
-const TILT = [-6, 4, -3, 7, -5, 3, -7, 5, -2, 6];
-const DROP = [2.5, 6, 1, 5, 3, 7, 1.5, 4.5, 2, 5.5];
+// Entrance ("dealing" the prints): duration, stagger between prints, and how far from
+// the pile in the middle each print starts (share of the distance to its place).
+const DEAL_MS = 1000;
+const DEAL_STAGGER_MS = 70;
+const DEAL_FROM = 0.55;
+const DEAL_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
 // White print border (px), the same thickness on the print and in the lightbox. In the
 // lightbox it is a box-shadow ring around the photo (outside the box, so it never affects
@@ -136,6 +145,32 @@ function ready(img: HTMLImageElement | null | undefined) {
   return Promise.race([img.decode().catch(() => {}), new Promise((r) => setTimeout(r, 120))]);
 }
 
+// Deal the prints onto the table: each flies out from a pile in the middle of the spread
+// to its place, in placement order (`data-rank`).
+function deal(ul: HTMLUListElement) {
+  const box = ul.getBoundingClientRect();
+  const pileX = box.left + box.width / 2;
+  const pileY = box.top + Math.min(box.height, window.innerHeight) / 2;
+  const items = Array.from(ul.children) as HTMLElement[];
+  const rank = (el: HTMLElement) => Number(el.dataset.rank ?? 0);
+  // Start every animation (fill: backwards) before un-hiding, in the same frame.
+  for (const li of items) {
+    const r = li.getBoundingClientRect();
+    const dx = (pileX - (r.left + r.width / 2)) * DEAL_FROM;
+    const dy = (pileY - (r.top + r.height / 2)) * DEAL_FROM + 40;
+    const spin = (rank(li) % 2 ? 1 : -1) * 10;
+    li.animate(
+      [
+        { opacity: 0, transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg) scale(0.7)` },
+        { opacity: 1, offset: 0.35 },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: DEAL_MS, delay: rank(li) * DEAL_STAGGER_MS, easing: DEAL_EASE, fill: "backwards" },
+    );
+  }
+  delete ul.dataset.deal;
+}
+
 export function PhotoSpread({ photos }: { photos: Photo[] }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -152,6 +187,61 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
   const raise = (i: number) =>
     setOrder((o) => (o[o.length - 1] === i ? o : [...o.filter((x) => x !== i), i]));
   const swipeRef = useRef<{ id: number; x: number; t: number; dx: number } | null>(null);
+
+  // Layout from the measured width. The seed is picked once per visit, so resizing
+  // reflows the same arrangement rather than reshuffling it.
+  const listRef = useRef<HTMLUListElement>(null);
+  const seedRef = useRef<number | null>(null);
+  const [layout, setLayout] = useState<SpreadLayout | null>(null);
+  // Animate position changes only on reflows (resize), not on the first placement.
+  const [reflow, setReflow] = useState(false);
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const ratios = photos.map((p) => p.width / p.height);
+    let width = 0;
+    // ResizeObserver already reports at most once per frame, so lay out right here.
+    const ro = new ResizeObserver(([entry]) => {
+      const w = Math.round(entry.contentRect.width);
+      if (w === width || w === 0) return;
+      width = w;
+      const first = seedRef.current === null;
+      if (first) seedRef.current = Math.floor(Math.random() * 2 ** 32);
+      const next = layoutSpread(ratios, w, seedRef.current!);
+      setLayout(next);
+      setReflow(!first);
+      if (first) setOrder(next.order); // placement order = initial stacking order
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [photos]);
+
+  // Entrance: once laid out, hide the prints until the spread reaches the viewport, then
+  // deal them onto the table in placement order. Plays once per visit; reduced motion and
+  // browsers without IntersectionObserver just show them.
+  const dealtRef = useRef(false);
+  const hasLayout = layout !== null;
+  useEffect(() => {
+    const ul = listRef.current;
+    if (!hasLayout || !ul || dealtRef.current) return;
+    if (reducedMotion() || !("IntersectionObserver" in window)) {
+      dealtRef.current = true;
+      return;
+    }
+    ul.dataset.deal = "pending";
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        io.disconnect();
+        dealtRef.current = true;
+        deal(ul);
+      },
+      { threshold: 0.15 },
+    );
+    io.observe(ul);
+    return () => io.disconnect();
+  }, [hasLayout]);
+
 
   // The white photo frame that flies (wraps the placeholder and the full-res image).
   const lightboxImg = () =>
@@ -320,22 +410,35 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
 
   return (
     <>
-      <ul className="-mx-[max(1.25rem,env(safe-area-inset-left))] flex snap-x snap-mandatory items-start overflow-x-auto px-[max(1.25rem,env(safe-area-inset-left))] pt-4 pb-12 [scrollbar-width:none] md:relative md:mx-0 md:block md:h-[24rem] md:overflow-visible md:p-0">
+      <ul
+        ref={listRef}
+        aria-label="Photos"
+        style={layout ? { height: layout.height } : undefined}
+        className={
+          layout
+            ? cn("relative data-[deal=pending]:*:opacity-0", reflow && "transition-[height] duration-500 ease-out")
+            : "flex flex-wrap justify-center gap-4 py-4"
+        }
+      >
         {photos.map((p, i) => {
-          const ratio = p.width / p.height;
-          const w = ratio >= 1 ? LONG_EDGE_REM : LONG_EDGE_REM * ratio;
-          const style = {
-            "--w": `${w}rem`,
-            "--t": n > 1 ? i / (n - 1) : 0.5,
-            "--y": `${DROP[i % DROP.length]}rem`,
-            "--r": `${TILT[i % TILT.length]}deg`,
-            "--z": order.indexOf(i) + 1,
-          } as CSSProperties;
+          const b = layout?.boxes[i];
+          const style = b
+            ? ({ left: b.x, top: b.y, width: b.w, "--r": `${b.r}deg`, "--z": order.indexOf(i) + 1 } as CSSProperties)
+            : ({ width: "12rem", "--r": "0deg" } as CSSProperties);
           return (
             <li
               key={p.src}
+              data-rank={layout ? layout.order.indexOf(i) : undefined}
               style={style}
-              className="relative z-(--z) w-(--w) shrink-0 snap-center not-first:-ml-12 has-[button:hover]:z-50 has-[button:focus-visible]:z-50 max-md:mt-[calc(var(--y)*0.5)] max-md:max-w-[62vw] md:absolute md:top-(--y) md:left-[calc((100%-var(--w))*var(--t))] md:not-first:ml-0"
+              className={
+                b
+                  ? cn(
+                      "absolute z-(--z) has-[button:hover]:z-50 has-[button:focus-visible]:z-50",
+                      reflow &&
+                        "transition-[left,top,width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
+                    )
+                  : "max-w-[42vw]"
+              }
             >
               <button
                 ref={(el) => {
@@ -360,7 +463,7 @@ export function PhotoSpread({ photos }: { photos: Photo[] }) {
                   alt={p.alt}
                   width={p.width}
                   height={p.height}
-                  sizes={`${LONG_EDGE_REM}rem`}
+                  sizes={layout ? `${Math.ceil(layout.longEdge)}px` : "12rem"}
                   draggable={false}
                   className="block h-auto w-full rounded-[2px] select-none"
                 />

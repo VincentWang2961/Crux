@@ -264,12 +264,33 @@ Photos come from `site-data.ts` → `PHOTOS` (`src`, `alt`, `place`, `date`, `wi
 pixel size sets each print's aspect ratio, so 4:3, 3:4, square and panoramic shots all lay out
 correctly.
 
-- **Spread:** prints are laid out like photos on a table.
-  - Tunables at the top of `photo-spread.tsx`: the long edge is `LONG_EDGE_REM`, and each print's tilt
-    and drop come from the `TILT` and `DROP` arrays.
-  - From `md` up, prints are absolutely positioned across the width and neighbours overlap. Hover or
-    keyboard focus lifts a print to the top, straightens it and scales it up.
-  - On phones it becomes a horizontal swipe strip of the same overlapping prints, with snap scrolling.
+- **Full-bleed:** unlike the CV sections, the photo section spans the whole page width (inside the
+  usual side gutters, up to 110 rem). Its header still lines up with the other sections
+  (`SectionHeader`), and `page.tsx` renders it after the `max-w-5xl` column.
+- **Spread layout** (`src/lib/photo-layout.ts`, a pure function `layoutSpread(ratios, width, seed)`):
+  - Every print has the same long edge; the short edge follows its aspect ratio.
+  - Rows are tried from 1 upwards. The shuffled prints are split into balanced rows, and the long edge
+    is chosen so the fullest row spans the width with neighbours overlapping by about `OVERLAP`. The
+    first row count that keeps prints at least `MIN_LONG_EDGE` wins (`MAX_LONG_EDGE` caps it). Phones
+    get two prints per row, desktops one or two rows.
+  - Rows are justified across the width and overlap vertically by `ROW_OVERLAP`. Each print gets a
+    random jitter and a tilt of `MIN_TILT`–`MAX_TILT` degrees.
+  - **Visibility guarantee:** at least `MIN_VISIBLE` (40 %) of every print is covered by no other
+    print. It is measured by sampling a grid over each tilted print against the union of all the
+    others, so it holds whatever the stacking order. A failing attempt is retried with a derived seed
+    and less jitter; the last attempt has no jitter or tilt and always passes.
+  - **Randomness:** a new seed per page load (picked on the client). Resizing reuses the seed, so the
+    spread reflows smoothly (`left/top/width` transitions) instead of reshuffling.
+  - Tested over 300 seeds at widths 335–1700 px: never under 40 % visible, never overflowing,
+    rows fill 92–98 % of the width, about 0.1 ms per layout.
+- **Rendering:** `photo-spread.tsx` measures the list with a `ResizeObserver` and positions the prints
+  absolutely from the layout. Before that (server HTML, no JS) they sit in a plain centred wrap. The
+  placement order is also the initial stacking order. Hover or keyboard focus lifts a print to the top,
+  straightens it and scales it up.
+- **Entrance:** the first time the spread scrolls into view, the prints are dealt onto the table one by
+  one in placement order (`DEAL_STAGGER_MS`). Each flies out from a pile in the middle (`DEAL_FROM` of
+  the way), spinning and growing into place over `DEAL_MS` with an expo-out ease. The header rises in
+  through `<Reveal>`. Reduced motion shows everything at once.
 - **Lightbox:** clicking a print opens a native `<dialog>` (`showModal`).
   - The photo fills most of the screen: up to 92vw by 82svh.
   - The page behind is blurred through `::backdrop`, and page scroll is locked
