@@ -24,7 +24,7 @@ export default function Home() {
           <Certifications />
           <GlobeSection />
         </div>
-        {/* Full-bleed: the photo spread uses the whole page width. */}
+        {/* Wider than the text column: the photo spread gets up to 80rem. */}
         <PhotoSection />
         <footer className="px-5 pt-4 text-center text-xs text-muted-foreground">
           © 2026 Vincent Wang · Built with Next.js & shadcn/ui

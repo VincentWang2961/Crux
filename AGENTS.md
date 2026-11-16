@@ -264,8 +264,8 @@ Photos come from `site-data.ts` → `PHOTOS` (`src`, `alt`, `place`, `date`, `wi
 pixel size sets each print's aspect ratio, so 4:3, 3:4, square and panoramic shots all lay out
 correctly.
 
-- **Full-bleed:** unlike the CV sections, the photo section spans the whole page width (inside the
-  usual side gutters, up to 110 rem). Its header still lines up with the other sections
+- **Wide:** unlike the CV sections, the photo section is wider than the text column (inside the
+  side gutters, which widen to 4 rem at `lg` and 6 rem at `xl`, up to 80 rem / `max-w-7xl`, so it is wider than the 64 rem text column but never hugs the window edges). Its header still lines up with the other sections
   (`SectionHeader`), and `page.tsx` renders it after the `max-w-5xl` column.
 - **Spread layout** (`src/lib/photo-layout.ts`, a pure function `layoutSpread(ratios, width, seed)`):
   - Every print has the same long edge; the short edge follows its aspect ratio.
