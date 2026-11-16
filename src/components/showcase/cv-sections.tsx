@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { PortraitCard } from "./portrait-card";
 import { Reveal } from "./reveal";
 import { Section } from "./section";
+import { UptimeDots } from "./uptime-dots";
 
 // CV content for the middle of the home page (between the hero and the globe).
 // All copy lives in site-data.ts; these components only lay it out.
@@ -195,9 +196,12 @@ export function Projects() {
                   </CardTitle>
                   <span className={period}>{p.period}</span>
                 </div>
-                <CardDescription>
-                  {p.kind}
-                  {p.grade && ` · ${p.grade}`}
+                <CardDescription className="flex items-center justify-between gap-3">
+                  <span>
+                    {p.kind}
+                    {p.grade && ` · ${p.grade}`}
+                  </span>
+                  {p.uptime && <UptimeDots />}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 text-sm leading-relaxed text-foreground/80">

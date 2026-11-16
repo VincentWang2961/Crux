@@ -128,9 +128,22 @@ export type Project = {
   stack: string[];
   summary: string;
   href?: string;
+  /** Show this website's live uptime lights (UptimeRobot) on the card. */
+  uptime?: boolean;
 };
 
 export const projects: Project[] = [
+  {
+    name: "Crux",
+    kind: "Personal portfolio website",
+    period: "2026–Present",
+    stack: ["Next.js", "Tailwind CSS", "Docker", "Cloudflare Tunnel"],
+    summary:
+      "My personal portfolio website (this website), built with Next.js and shadcn/ui, self-hosted in Docker " +
+      "behind a Cloudflare Tunnel and redeployed automatically from GitHub.",
+    href: "https://github.com/VincentWang2961/Crux",
+    uptime: true,
+  },
   {
     name: "Personal Home Lab",
     kind: "Self-hosted infrastructure",
@@ -168,16 +181,6 @@ export const projects: Project[] = [
     summary:
       "ESP32 firmware in C that collects plant sensor readings and sends them over Wi-Fi for processing and storage, " +
       "with validated telemetry and documentation.",
-  },
-  {
-    name: "Crux",
-    kind: "This website",
-    period: "2026",
-    stack: ["Next.js", "Tailwind CSS", "Docker", "Cloudflare Tunnel"],
-    summary:
-      "Personal site built with Next.js and shadcn/ui, self-hosted in Docker behind a Cloudflare Tunnel and " +
-      "redeployed automatically from GitHub.",
-    href: "https://github.com/VincentWang2961/Crux",
   },
 ];
 
