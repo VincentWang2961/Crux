@@ -520,7 +520,29 @@ html.theme-switching::view-transition-new(root) {
   --uptime-cycle: 4s;
   --uptime-step: 0.45s;
 }
+/* Light theme. On a white page, fading a light (opacity) or washing it with white turns it
+   grey or pastel, and a pale glow reads as a smudge. So here the light stays fully opaque and
+   saturated, and the breath plays out in depth instead:
+   - rest: a deep, saturated tone (the colour mixed with up to 34 % black), small, no glow;
+   - peak: the vivid colour, a glossy highlight up top-left, and a saturated glow around it.
+   A thin darker rim, like an LED bezel, keeps the edge crisp against white. */
 .uptime-dot {
+  scale: calc(0.9 + 0.1 * var(--breath));
+  background:
+    radial-gradient(circle at 36% 30%, rgb(255 255 255 / calc(0.08 + 0.45 * var(--breath))) 0 16%, transparent 42%),
+    radial-gradient(
+      circle at 50% 55%,
+      color-mix(in oklch, var(--c), white calc(var(--breath) * 6%)),
+      color-mix(in oklch, var(--c), black calc(34% - 26% * var(--breath))) 100%
+    );
+  box-shadow:
+    inset 0 0 0 0.5px color-mix(in oklch, var(--c), black calc(30% - 10% * var(--breath))),
+    0 0 calc(1px + 8px * var(--breath)) calc(var(--breath) * 2px)
+      color-mix(in oklch, var(--c) calc(8% + 55% * var(--breath)), transparent);
+}
+/* Dark theme: a light on a dark panel. Dimming really reads as "off", and a white-hot
+   centre with a soft glow reads as "on". */
+.dark .uptime-dot {
   opacity: calc(0.35 + 0.65 * var(--breath));
   scale: calc(0.88 + 0.12 * var(--breath));
   background: radial-gradient(

@@ -161,10 +161,12 @@ the group has a full spoken label.
   next wave.
   - **One value drives everything:** each light animates one registered number, `--breath`
     (`@property`, 0 = rest, 1 = peak). It sets:
-    - core opacity, 0.35 → 1;
-    - a slight swell, scale 0.88 → 1;
-    - a white-hot centre, mixing in up to 45 % white;
+    - a slight swell, to scale 1;
     - the coloured glow's radius and strength;
+    - **dark theme:** core opacity 0.35 → 1 and a white-hot centre (up to 45 % white);
+    - **light theme:** never faded, since opacity or white turns the light grey or pastel on a
+      white page. The core goes from a deep, saturated tone (up to 34 % black) to its vivid
+      colour, with a glossy highlight at the peak and a thin darker rim like an LED bezel;
     - on HDR screens, the HDR sprite's opacity, which appears only above 0.6.
   - **Curve:** the "breathing LED" curve, exp(sin t) normalised to 0–1, sampled into a `linear()`
     timing function. It gives a slow inhale, a short bright peak and a long dim rest.
