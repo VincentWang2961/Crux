@@ -140,13 +140,26 @@ Section bodies are separated by top borders.
 Mirrors the LinkedIn Experience section, newest first, but **leaves out Peer Learning Support** on
 purpose. Each entry (`experience` in `site-data.ts`) has a role, organisation, place, period, an
 optional `note` line and **one short `summary` paragraph** (no bullet lists).
-- **Logos:** `org-logo.tsx` draws each organisation's mark before the entry, as inline SVG, bare on the page (no tile or border)
-  in a 48 px box, with a little inset for solid marks so all read at the same weight. The marks are official artwork cropped to the mark
-  (the sources are listed in the file). CfAA switches to its own dark-logo colours in dark mode, and
-  the Uber wordmark uses the text colour. To add an organisation, add a key to `ExperienceItem["logo"]`
-  and its SVG to `MARK`.
+- **Logos:** `org-logo.tsx` draws each organisation's mark before the entry, bare on the page (no
+  tile or border). The marks are official artwork cropped to the mark (sources listed in the file),
+  kept as files in `public/logos/`: `<key>.svg` or `.png`, plus `<key>-dark.svg` where the dark theme
+  needs other colours (CfAA's own dark-logo colours, the Uber wordmark in near-white).
+- **Optical sizing:** every mark is sized by an algorithm so all read at the same visual size, whatever
+  their shape.
+  - `scripts/measure-logos.py` renders each file, crops it to its ink (`--trim`), and records two
+    numbers in the generated `src/lib/logo-metrics.ts`: `aspect` (ink width / height) and `coverage`
+    (inked share of the ink's bounding box: a solid disc is about 0.8, the open Woolworths wave 0.33).
+  - `org-logo.tsx` computes `S = T · coverage^-K`, `width = S · aspect^E`,
+    `height = S · aspect^(E − 1)`. Sparse marks grow a little to make up for their empty space
+    (`K` = 0.15). Wide wordmarks get a bit less than equal area so they don't sprawl (`E` = 0.25, where
+    0.5 would mean equal area).
+  - `T` is the largest size at which every mark still fits the 56 × 48 px slot, so no mark is
+    clamped out of proportion.
+  - **Adding an organisation:** put its file in `public/logos/`, add its key to `OrgLogoKey` in
+    `site-data.ts`, and run `python3 scripts/measure-logos.py --trim`. This needs `rsvg-convert` and
+    Pillow.
 - **Scroll-in:** the section is wrapped in `<Reveal>`, like About. The header rises first, then each
-  entry rises, fades and un-blurs in turn (`--i` steps of 1.5, about 105 ms apart). Its logo tile pops
+  entry rises, fades and un-blurs in turn (`--i` steps of 1.5, about 105 ms apart). Its logo pops
   in a beat later, growing from 60 % and turning upright from -10° (`.reveal-logo` in `globals.css`).
   Reduced motion shows everything at once.
 
@@ -156,10 +169,9 @@ Built the same way as Experience: each entry (`education` in `site-data.ts`) has
 (specialisation, result) and **one short `summary` paragraph**, with the institution's mark before it
 and the same staggered `<Reveal>` with the logo popping in. Both degrees stay listed, although
 LinkedIn shows only UWA.
-- **Logos:** the two universities are files, not inline SVG: `public/logos/uwa.svg` (UWA's own crest
-  SVG with the wordmark paths removed) and `public/logos/jsut.png` (JSUT only publishes its emblem as
-  a raster inside an SVG; cropped on its transparent background, 128 px tall, 64-colour palette).
-  `org-logo.tsx` draws them with a plain `<img>`. All logo keys are the `OrgLogoKey` union in `site-data.ts`.
+- **Logos:** the same optically sized marks: `public/logos/uwa.svg` (UWA's own crest SVG with the
+  wordmark paths removed) and `public/logos/jsut.png` (JSUT only publishes its emblem as a raster inside
+  an SVG; cropped on its transparent background, 128 px tall, 64-colour palette).
 
 ### Projects → status lights (Crux, home lab)
 
