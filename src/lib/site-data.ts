@@ -358,7 +358,7 @@ export type Photo = {
 
 export const PHOTOS: Photo[] = [
   { src: "/photos/golden-gate-bridge.jpg", alt: "The Golden Gate Bridge seen from a rocky beach, waves breaking over dark boulders", place: "Golden Gate Bridge, San Francisco", width: 2576, height: 1716 },
-  { src: "/photos/osaka-skyline.jpg", alt: "Dense city blocks and a long straight avenue at dusk, seen from high above", place: "Abeno, Osaka", width: 1125, height: 1500 },
+  { src: "/photos/osaka-skyline.jpg", alt: "Dense city blocks and a long straight avenue at dusk, seen from high above", place: "Harukas 300, Osaka", width: 1125, height: 1500 },
   { src: "/photos/lake-tahoe.jpg", alt: "Pine trees leaning over clear turquoise water", place: "Lake Tahoe, California", width: 2576, height: 1717 },
   { src: "/photos/kyoto-yasaka-pagoda.jpg", alt: "A five-storey wooden pagoda rising above tiled rooftops and green trees", place: "Yasaka Pagoda, Kyoto", width: 2000, height: 1500 },
   { src: "/photos/shanghai-lujiazui.jpg", alt: "The Oriental Pearl Tower and the Lujiazui skyscrapers under a bright sky", place: "Lujiazui, Shanghai", width: 768, height: 1024 },
