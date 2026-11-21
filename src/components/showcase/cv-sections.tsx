@@ -20,6 +20,7 @@ import {
   skillGroups,
 } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
+import { OrgLogo } from "./org-logo";
 import { PortraitCard } from "./portrait-card";
 import { Reveal } from "./reveal";
 import { Section } from "./section";
@@ -166,12 +167,15 @@ export function About() {
 export function Experience() {
   return (
     <Section id="experience" command="cat experience.md" title="Experience">
-      <ol className="flex flex-col gap-8">
+      <ol className="flex flex-col gap-7">
         {experience.map((e) => (
-          <li key={e.role + e.org}>
-            <EntryHead title={e.role} sub={`${e.org} · ${e.place}`} when={e.period} />
-            {e.note && <p className="mt-0.5 text-xs text-muted-foreground">{e.note}</p>}
-            <Points items={e.points} />
+          <li key={e.role + e.org} className="flex gap-4">
+            <OrgLogo logo={e.logo} className="mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <EntryHead title={e.role} sub={`${e.org} · ${e.place}`} when={e.period} />
+              {e.note && <p className="mt-0.5 text-xs text-muted-foreground">{e.note}</p>}
+              <p className="mt-2 text-sm leading-relaxed text-foreground/80">{e.summary}</p>
+            </div>
           </li>
         ))}
       </ol>

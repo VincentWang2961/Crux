@@ -135,6 +135,17 @@ Section bodies are separated by top borders.
   (`animation-timeline: scroll(root)`, over the first 70 svh) that eases it up, shrinks it to 96 % and
   fades it out as About comes in. It is skipped where scroll timelines are unsupported.
 
+### Experience
+
+Mirrors the LinkedIn Experience section, newest first, but **leaves out Peer Learning Support** on
+purpose. Each entry (`experience` in `site-data.ts`) has a role, organisation, place, period, an
+optional `note` line and **one short `summary` paragraph** (no bullet lists).
+- **Logos:** `org-logo.tsx` draws each organisation's mark before the entry, as inline SVG in a 40 px
+  bordered tile with a transparent background. The marks are official artwork cropped to the mark
+  (the sources are listed in the file). CfAA switches to its own dark-logo colours in dark mode, and
+  the Uber wordmark uses the text colour. To add an organisation, add a key to `ExperienceItem["logo"]`
+  and its SVG to `MARK`.
+
 ### Projects → status lights (Crux, home lab)
 
 A project card with `uptime: { monitor, subject }` in `projects` shows three small lights in its

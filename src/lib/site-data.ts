@@ -87,36 +87,55 @@ export const profile = {
 export type ExperienceItem = {
   role: string;
   org: string;
+  /** Mark shown before the entry (org-logo.tsx). */
+  logo: "outlier" | "woolworths" | "cfaa" | "uber";
   place: string;
   period: string;
+  /** One short line under the heading, e.g. how the role came about. */
   note?: string;
-  points: string[];
+  /** One short paragraph. */
+  summary: string;
 };
 
+// Matches LinkedIn (Peer Learning Support is deliberately left off). Newest first.
 export const experience: ExperienceItem[] = [
+  {
+    role: "Data Annotator",
+    org: "Outlier",
+    logo: "outlier",
+    place: "Remote · Freelance",
+    period: "Oct 2026 – Present",
+    summary: "Annotate and review data used to train and evaluate AI models, on Outlier's platform.",
+  },
+  {
+    role: "Assistant Department Manager",
+    org: "Woolworths Group",
+    logo: "woolworths",
+    place: "Balcatta, WA · Part-time",
+    period: "Oct 2025 – Present",
+    note: "Promoted from Operations Team Member (Oct 2025 – Sep 2026)",
+    summary:
+      "Plan the nightly workload and allocate tasks across the nightfill team, receive and check deliveries, " +
+      "and keep the store safe, stocked and ready for trading.",
+  },
   {
     role: "IT Development Intern",
     org: "Centre for Accessibility Australia",
-    place: "Perth, WA",
+    logo: "cfaa",
+    place: "Perth, WA · Internship",
     period: "Feb 2026 – May 2026",
     note: "Through UWA's McCusker Centre for Citizenship internship programme",
-    points: [
-      "Built a standardised Windows image with the organisation's software and configuration, and deployed it to about 10 workstations with Clonezilla.",
-      "Built SharePoint team pages for internal departments, and reviewed and updated organisational documentation.",
-      "Evaluated Jira and Asana against the organisation's needs in a written report covering features, costs and migration.",
-      "Tested web pages and documents against WCAG guidelines with screen reader software and the Microsoft Office Accessibility Checker.",
-    ],
+    summary:
+      "IT support for an accessibility not-for-profit: deployed a standard Windows image to about 10 workstations, " +
+      "built SharePoint pages, compared Jira and Asana in a written report, and tested content against WCAG.",
   },
   {
-    role: "Assistant Nightfill Manager",
-    org: "Woolworths Supermarkets",
-    place: "Perth, WA",
-    period: "Oct 2025 – Present",
-    note: "Promoted from Nightfill Team Member within 12 months",
-    points: [
-      "Allocate tasks and coordinate overnight operations for a team of up to 8, and lead the department when the manager is absent.",
-      "Set priorities against fixed overnight deadlines; triage operational, customer and team issues and escalate where required.",
-    ],
+    role: "Delivery Driver",
+    org: "Uber",
+    logo: "uber",
+    place: "Perth, WA · Freelance",
+    period: "Nov 2024 – Oct 2025",
+    summary: "Self-employed deliveries across Greater Perth, planning my own hours and routes.",
   },
 ];
 
