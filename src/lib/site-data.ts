@@ -365,4 +365,6 @@ export const PHOTOS: Photo[] = [
   { src: "/photos/santa-monica-pier.jpg", alt: "The Route 66 End of the Trail sign above a crowd on the pier", place: "Santa Monica Pier, Los Angeles", width: 1086, height: 724 },
   { src: "/photos/yosemite-half-dome.jpg", alt: "A lone figure silhouetted on a road, facing Half Dome between dark pines", place: "Half Dome, Yosemite", width: 2000, height: 1333 },
   { src: "/photos/hot-creek.jpg", alt: "A creek winding through a rocky valley below the Sierra Nevada", place: "Hot Creek, Eastern Sierra", width: 2576, height: 1717 },
+  { src: "/photos/jewel-changi-rain-vortex.jpg", alt: "The Rain Vortex waterfall pouring through a glass dome into a terraced indoor forest, with a sky train crossing in front", place: "Jewel Changi Airport, Singapore", width: 1500, height: 1125 },
+  { src: "/photos/perth-government-house.jpg", alt: "Government House, a red-brick building with slate-roofed turrets on a green lawn, under modern office towers", place: "Government House, Perth", width: 2000, height: 1500 },
 ];
