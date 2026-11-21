@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { IconBrandGithub, IconBrandLinkedin, IconBrandSteam, IconMail } from "@tabler/icons-react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, RotateCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { OrgLogo } from "./org-logo";
 import { PortraitCard } from "./portrait-card";
+import { ProjectFlip } from "./project-flip";
 import { Reveal } from "./reveal";
 import { Section } from "./section";
 import { UptimeDots } from "./uptime-dots";
@@ -181,7 +182,7 @@ export function Projects() {
                 <div className="flex items-baseline justify-between gap-3">
                   <CardTitle className="flex items-center gap-1">
                     {p.name}
-                    {p.href && (
+                    {p.href && !p.details && (
                       <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:-translate-y-px group-hover:translate-x-px" />
                     )}
                   </CardTitle>
@@ -204,9 +205,18 @@ export function Projects() {
                     {t}
                   </Badge>
                 ))}
+                {p.details && (
+                  <span className="ml-auto flex items-center gap-1 font-mono text-xs text-muted-foreground transition-colors group-hover:text-foreground">
+                    <RotateCw aria-hidden className="size-3.5 transition-transform duration-500 group-hover:rotate-180" />
+                    Details
+                  </span>
+                )}
               </CardFooter>
             </Card>
           );
+          if (p.details) {
+            return <ProjectFlip key={p.name} title={p.name} front={card} back={<ProjectDetails project={p} />} />;
+          }
           return p.href ? (
             <a key={p.name} href={p.href} target="_blank" rel="noreferrer" className="group">
               {card}
@@ -217,6 +227,58 @@ export function Projects() {
         })}
       </div>
     </Section>
+  );
+}
+
+// The back of a project card (project-flip.tsx): overview, what I did, stack and link.
+function ProjectDetails({ project: p }: { project: (typeof projects)[number] }) {
+  const d = p.details!;
+  return (
+    <article className="flex flex-col gap-5 p-6 pr-14 sm:p-8 sm:pr-16">
+      <header>
+        <p className="font-mono text-xs text-muted-foreground">$ cat projects/{p.name.toLowerCase().replaceAll(" ", "-")}.md</p>
+        <h3 className="mt-1.5 text-xl font-semibold tracking-tight">{p.name}</h3>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+          <span>
+            {p.kind}
+            {p.grade && ` · ${p.grade}`}
+          </span>
+          <span aria-hidden>·</span>
+          <span className="font-mono text-xs tabular-nums">{p.period}</span>
+        </p>
+      </header>
+      <p className="text-sm leading-relaxed text-foreground/85">{d.overview}</p>
+      <section>
+        <h4 className="font-mono text-xs text-muted-foreground">What I did</h4>
+        <ul className="mt-2 flex flex-col gap-1.5 text-sm leading-relaxed text-foreground/80">
+          {d.highlights.map((h) => (
+            <li key={h} className="flex gap-2.5">
+              <span aria-hidden className="text-muted-foreground">
+                –
+              </span>
+              <span>{h}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <footer className="flex flex-wrap items-center gap-1.5 border-t pt-4">
+        {p.stack.map((t) => (
+          <Badge key={t} variant="outline">
+            {t}
+          </Badge>
+        ))}
+        {p.href && (
+          <a
+            href={p.href}
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto flex items-center gap-1 text-sm font-medium underline-offset-4 hover:underline"
+          >
+            View project <ArrowUpRight aria-hidden className="size-4" />
+          </a>
+        )}
+      </footer>
+    </article>
   );
 }
 

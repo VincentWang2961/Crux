@@ -202,6 +202,39 @@ LinkedIn shows only UWA.
   - **JSUT:** `public/logos/jsut.png`. JSUT only publishes its emblem as a raster inside an SVG, so
     it is cropped on its transparent background, 128 px tall, with a 64-colour palette.
 
+### Projects → flip-open details
+
+A project with `details: { overview, highlights }` in `projects` (`site-data.ts`) opens into a
+details panel. Clicking its card turns it over. The Smart Plant Caring System (IoT) is the first
+one. Projects without `details` stay plain cards, or links with `href`.
+- **Card:** the footer shows a "↻ Details" hint, and its icon turns half a circle on hover. A
+  stretched `<button>` covers the card (`aria-haspopup="dialog"`, labelled "Show details: …"), so the
+  card's own markup stays plain. A project with both `details` and `href` puts its link
+  ("View project ↗") on the back instead.
+- **Motion** (`project-flip.tsx`, Web Animations API):
+  - The card lifts out of the grid into a native modal `<dialog>`. It flies to the centre while
+    rotating 180° about its vertical axis and rising towards the viewer mid-turn (`LIFT`,
+    `translateZ`), and its back grows to the panel's size. The page behind blurs in through
+    `::backdrop`.
+    - The panel is centred, up to 640 px wide and as tall as its content (at most 86 % of the
+      viewport, then it scrolls).
+    - The card's own width and height are kept on the front face the whole way, so nothing reflows.
+  - Timing: `OPEN_MS` is 760 ms and `CLOSE_MS` 600 ms, on an ease-in-out curve. Closing plays the
+    turn backwards into the card's current slot.
+  - The card in the grid is hidden while its twin is out, so they read as one object.
+  - Reduced motion opens and closes instantly.
+- **Closing:** Esc (animated through `onCancel`), the × button, or a click outside the panel. Focus
+  moves to the × button on open and returns to the card on close. The card is made visible again
+  before the dialog closes, so focus can land on it. The page can't scroll while the dialog is open
+  (`html:has(dialog[open])`).
+- **Back face:** rendered on the server by `ProjectDetails` in `cv-sections.tsx`:
+  - a `$ cat projects/<name>.md` line, the title, kind and period;
+  - the overview;
+  - "What I did" (`highlights`);
+  - the stack badges.
+- Don't transform the `<dialog>` itself. Only the inner flipper moves. The dialog carries just the
+  `perspective`.
+
 ### Projects → status lights (Crux, home lab)
 
 A project card with `uptime: { monitor, subject }` in `projects` shows three small lights in its

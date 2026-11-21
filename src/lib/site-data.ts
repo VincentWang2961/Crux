@@ -155,6 +155,16 @@ export type Project = {
    * (the number in its dashboard URL); `subject` names it in the spoken label.
    */
   uptime?: { monitor: string; subject: string };
+  /**
+   * Opens the card into a details panel (project-flip.tsx): clicking turns it over. Without
+   * it, the card is a plain card (or a link, with `href`).
+   */
+  details?: {
+    /** A short paragraph on what it is and why. */
+    overview: string;
+    /** What I did, one line each. */
+    highlights: string[];
+  };
 };
 
 export const projects: Project[] = [
@@ -207,6 +217,17 @@ export const projects: Project[] = [
     summary:
       "ESP32 firmware in C that collects plant sensor readings and sends them over Wi-Fi for processing and storage, " +
       "with validated telemetry and documentation.",
+    details: {
+      overview:
+        "A small IoT device that keeps an eye on a plant. An ESP32 microcontroller reads the plant's sensors and " +
+        "reports the readings over Wi-Fi, so they can be processed and stored away from the device.",
+      highlights: [
+        "Wrote the ESP32 firmware in C to collect readings from the plant sensors.",
+        "Sent the readings over Wi-Fi to be processed and stored.",
+        "Validated the telemetry so that what is stored matches what the sensors measured.",
+        "Documented the system.",
+      ],
+    },
   },
 ];
 
