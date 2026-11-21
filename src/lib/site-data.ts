@@ -156,21 +156,23 @@ export type Project = {
    */
   uptime?: { monitor: string; subject: string };
   /**
-   * Opens the card into a details panel (project-flip.tsx): clicking turns it over. Without
-   * it, the card is a plain card (or a link, with `href`). The back is paged: an overview
-   * page (photo + paragraph), one page per section, then the stack and links.
+   * Opens the card into a details panel (project-flip.tsx). Everything fits on one page:
+   * photo, overview, sections, stack and links. Only a project with more to say (several
+   * services, say) adds `morePages`, which turns the panel into a pager.
    */
   details?: {
-    /** Photo for the overview page; width/height set its aspect ratio. Files in public/projects/. */
+    /** Photo beside the text; width/height set its aspect ratio. Files in public/projects/. */
     image?: { src: string; alt: string; width: number; height: number };
     /** A short paragraph on what it is and why. */
     overview: string;
-    /** Each becomes its own page: a title and short lines. */
+    /** Short titled lists under the overview, e.g. "What I did". Keep them brief. */
     sections: { title: string; items: string[] }[];
-    /** Technologies by group, for the last page. */
-    stack: { group: string; items: string[] }[];
+    /** Technologies, shown as badges. */
+    stack: string[];
     /** Further reading (repository, report, demo). */
     links?: { label: string; href: string }[];
+    /** Extra pages after the first, only when one page can't hold it all. */
+    morePages?: { label: string; sections: { title: string; items: string[] }[] }[];
   };
 };
 
@@ -232,40 +234,22 @@ export const projects: Project[] = [
         height: 2000,
       },
       overview:
-        "A modular IoT platform that looks after indoor plants on its own. Sensors in a foil-lined grow box report " +
-        "soil moisture, light, temperature and water level; the system waters, lights, heats and ventilates the plants " +
-        "to match, keeps a camera on them, and once a week asks a large language model to read the data and photos " +
-        "and suggest how to care for them. Built by a team of four for a UWA IoT unit.",
+        "A modular IoT platform that looks after indoor plants on its own. Sensors in a foil-lined grow box track " +
+        "soil moisture, light, temperature and water level; the system waters, lights, heats and ventilates to match, " +
+        "keeps a camera on the plants, and asks GPT-4o for a weekly care report. Built by a team of four for a UWA IoT unit.",
       sections: [
         {
           title: "What I did",
           items: [
+            "Built the LLM analysis: a Flask service that sends seven days of sensor data and photos to GPT-4o and returns a structured plant health report.",
+            "Designed and built the dashboard, plant setup, plant details and analysis pages.",
+            "Wrote the ESP32 camera firmware for periodic photos and live streaming.",
             "Top contributor to the repository (26 commits).",
-            "Built the LLM analysis: a Flask backend that pulls seven days of sensor readings and photos from the database and asks OpenAI GPT-4o for a structured plant health report and care suggestions.",
-            "Designed and built the web pages: plant dashboard, plant setup, plant details (with a low-water warning) and the analysis page with loading states and environmental trends.",
-            "Wrote the ESP32 camera firmware for periodic photos and the live video stream.",
-          ],
-        },
-        {
-          title: "How it works",
-          items: [
-            "Watering: a capacitive soil moisture sensor and a float switch drive a pump through relays, automatically below a set threshold or by hand.",
-            "Light: a BH1750 light sensor adjusts the LED grow lights.",
-            "Temperature: a BME280 switches a fan or a heating pad.",
-            "Camera: the XIAO ESP32S3 Sense takes periodic photos and streams live video.",
-            "Data: sensor readings go over MQTT (Mosquitto) to the Flask backend and into SQLite; photos are uploaded over HTTP.",
-            "Dashboard: live charts (Chart.js), thresholds, manual override and the weekly GPT-4o report.",
           ],
         },
       ],
-      stack: [
-        { group: "Hardware", items: ["XIAO ESP32S3 Sense", "BME280", "BH1750", "Soil moisture sensor", "Relays & pump"] },
-        { group: "Firmware", items: ["C/C++", "Arduino", "AsyncMQTTClient", "ArduinoJson"] },
-        { group: "Backend", items: ["Python", "Flask", "Mosquitto MQTT", "SQLite", "Socket.IO"] },
-        { group: "Frontend", items: ["HTML/CSS/JS", "Chart.js"] },
-        { group: "AI", items: ["OpenAI GPT-4o"] },
-      ],
-      links: [{ label: "GitHub repository", href: "https://github.com/Cynthiachen2023/Smart-plant-care-system" }],
+      stack: ["XIAO ESP32S3", "C/C++", "MQTT", "Python", "Flask", "SQLite", "Chart.js", "OpenAI GPT-4o"],
+      links: [{ label: "GitHub", href: "https://github.com/Cynthiachen2023/Smart-plant-care-system" }],
     },
   },
 ];

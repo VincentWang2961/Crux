@@ -202,66 +202,68 @@ LinkedIn shows only UWA.
   - **JSUT:** `public/logos/jsut.png`. JSUT only publishes its emblem as a raster inside an SVG, so
     it is cropped on its transparent background, 128 px tall, with a 64-colour palette.
 
-### Projects → flip-open details
+### Projects → details panel
 
-A project with `details` in `projects` (`site-data.ts`) opens into a details panel: clicking its card
-turns it over like a solid card. The Smart Plant Caring System (IoT) is the first one. Projects
-without `details` stay plain cards, or links with `href`.
+A project with `details` in `projects` (`site-data.ts`) opens into a details panel. The Smart
+Plant Caring System (IoT) is the first one. Projects without `details` stay plain cards, or links
+with `href`.
 
 **Data:** `details` has these fields:
 - `image` (optional): a photo in `public/projects/`, with its pixel size;
 - `overview`: one paragraph;
-- `sections`: a list of `{ title, items }`;
-- `stack`: a list of `{ group, items }`;
-- `links` (optional): a list of `{ label, href }`.
+- `sections`: short `{ title, items }` lists, such as "What I did";
+- `stack`: a list of strings, shown as badges;
+- `links` (optional): a list of `{ label, href }`;
+- `morePages` (optional): extra pages, see below.
 
-The IoT copy comes from its GitHub README and the commit history (Vincent's own part).
+**One page first.** Everything goes on a single page:
+- From `sm` up, the photo sits on the left at its own aspect ratio, vertically centred against the
+  text column. On phones it becomes a 16:9 crop above the text.
+- The text column has the title, kind and period, then the overview, the sections, the stack and
+  the links. GitHub links get the GitHub mark.
+- Keep the copy tight so that it fits. The IoT copy comes from its GitHub README and the commit
+  history (Vincent's own part).
 
-**Card:** the footer shows a "↻ Details" hint, and its icon turns half a circle on hover. A
-stretched `<button>` covers the card (`aria-haspopup="dialog"`, labelled "Show details: …").
+Only a project with more to say (such as the home lab's several services) sets `morePages`. The
+panel then becomes a `ProjectPager` (`project-pager.tsx`):
+- The pages sit in a horizontal scroll-snap track, so a swipe turns them natively.
+- The bottom bar has ‹ › buttons, the page name with "n/N", and one dot per page. ←/→ also turn
+  pages.
+- The pager returns to page 1 on each open. Pages that aren't showing are `inert`.
 
-**Motion** (`project-flip.tsx`, Web Animations API):
-- The card lifts out of the grid into a native modal `<dialog>` and flies to the centre. On the way
-  it turns 180° about its vertical axis, rises towards the viewer (`LIFT`, 160 px) and tips back
-  (`TIP`, 10°) at mid-turn, and grows into the panel. The page behind blurs in through `::backdrop`.
-  - Every keyframe uses the same transform shape, `translateZ() rotateX() rotateY()`, so each part
-    interpolates on its own.
-  - Timing: `OPEN_MS` is 900 ms and `CLOSE_MS` 700 ms, on an ease-in-out curve. Closing plays the
-    turn backwards into the card's slot.
-- **It looks solid:**
-  - **Thickness:** `EDGE_LAYERS` slices stacked between the two faces (`THICKNESS`, 8 px) form an
-    edge that shows when the card is side-on. The faces sit at ±4 px with `backface-visibility:
-    hidden`.
-  - **Light:** each face has a `[data-shade]` layer that darkens it towards side-on (`SHADE`), and a
-    `[data-glare]` highlight that sweeps across the face coming into view.
-  - **Shadow:** `[data-shadow]` deepens while the card is lifted.
-- **Panel:** centred, up to 760 × 520 px. On phones (< 640 px wide) it can be up to 86 % of the
-  screen height. The front keeps the card's own size, centred on a face that grows, so nothing
-  reflows.
+**Phones:** the panel can be up to the full screen height, less 16 px gutters, and a page that is
+still too long scrolls vertically. A fade at its bottom edge (`.details-more` in `globals.css`)
+says there is more: it is driven by the page's own scroll timeline, so it fades out as you reach
+the end, and it never shows when everything fits.
+
+**Panel size:** centred, up to 820 px wide, and as tall as its content, measured once at the final
+width. For a pager the height is the tallest page's. The cap is 640 px on desktop.
+
+**Card hint:** `details-hint.tsx` tucks "↻ Details" into the bottom-right corner of the
+description, in the space the last line leaves free.
+- If there is no room for the word, it shows only the rotate icon. If there is no room at all, the
+  icon goes on its own line.
+- It measures the last line with a `Range` and re-measures on resize.
+- The icon turns half a circle when the card is hovered.
+
+**Motion** (`project-flip.tsx`, a "container transform" with the Web Animations API; no 3D):
+- One box, with the card's surface, border and corners, grows from the card's place in the grid
+  to the panel. Its `left`, `top`, `width` and `height` animate over `OPEN_MS` (560 ms), on an
+  emphasised-decelerate curve. The page behind blurs in through `::backdrop`.
+- **Nothing inside reflows.** The card's content keeps the card's exact size and the details keep
+  the panel's exact size, both pinned to the box's centre and clipped by it.
+  - The card's content fades out in the first 30 %.
+  - The details fade in and rise 10 px over the rest.
+- Closing runs it backwards over `CLOSE_MS` (420 ms): the details fade out first, and the card's
+  content fades back in at the end.
 - The card in the grid is hidden while its twin is out. Reduced motion opens and closes instantly.
-- **Backdrop bug, fixed:** every animation started is kept in `running` and cancelled by `stop()`
-  when closing finishes and before the next open. A finished `fill: "forwards"` animation on
-  `::backdrop` keeps applying its last frame (opacity 0), which hid the blur on every open after
-  the first.
-
-**Back face** (a `ProjectPager`, `project-pager.tsx`; pages built in `ProjectDetails`, `cv-sections.tsx`):
-- **Pages, in order:**
-  1. **Overview:** the photo and the paragraph. Side by side from `sm` up, with the whole photo at
-     its own aspect ratio. On phones, a 4:3 crop above the text.
-  2. **One page per section**, such as "What I did" and "How it works".
-  3. **"Stack & links":** the stack grouped in a list, then link buttons. GitHub links get the
-     GitHub mark.
-- **Paging:** the pages sit in a horizontal scroll-snap track, so a swipe on touch or a trackpad
-  turns a page natively.
-  - The bottom bar has ‹ › buttons, the page name with "n/N", and one dot per page (the current dot
-    is wider). ←/→ also turn pages while the dialog is open.
-  - The pager returns to page 1 each time the dialog opens. Pages that aren't showing are `inert`.
-  - A page that is still too tall scrolls on its own, with a fade at its bottom edge.
-- **Closing:** Esc (animated through `onCancel`), the × button, or a click outside. On open, focus
-  moves to × so that Esc and the arrow keys land in the dialog. On close, focus returns to the card,
-  which is shown again first. The page can't scroll while the dialog is open.
-- Don't transform the `<dialog>` itself. Only the inner flipper moves, and the dialog carries just
-  the `perspective`.
+- **Backdrop:** every animation started is kept in `running` and cancelled by `stop()`. A finished
+  `fill: "forwards"` animation on `::backdrop` would otherwise keep applying opacity 0, which hid
+  the blur on every open after the first.
+- **Closing and focus:** Esc (animated through `onCancel`), the × button, or a click outside. On
+  open, focus moves to ×, so that Esc and ←/→ land in the dialog. On close, focus returns to the
+  card. The page can't scroll while the dialog is open.
+- Don't transform the `<dialog>` itself.
 
 ### Projects → status lights (Crux, home lab)
 

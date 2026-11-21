@@ -585,3 +585,26 @@ html.theme-switching::view-transition-new(root) {
     }
   }
 }
+
+/* Project details panel (cv-sections.tsx): a fade at the bottom of a page that scrolls, saying
+   there is more. Driven by the page's own scroll: fully shown at the top, gone at the end.
+   Where the page doesn't scroll (or scroll timelines are unsupported) the timeline is
+   inactive, the animation has no effect, and the fade stays at its resting opacity 0. */
+.details-more {
+  opacity: 0;
+}
+@supports (animation-timeline: scroll()) {
+  .details-more {
+    animation: details-more linear both;
+    animation-timeline: scroll(nearest block);
+  }
+}
+@keyframes details-more {
+  0%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

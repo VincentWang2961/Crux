@@ -3,59 +3,49 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode, type SyntheticEvent } from "react";
 import { X } from "lucide-react";
 
-// A project card that turns over, as a solid object, into its details.
-// - Clicking the card (or Enter / Space on its button) lifts it out of the grid into a native
-//   modal <dialog>. It flies to the centre of the screen while turning 180° about its
-//   vertical axis, rising towards the viewer and tipping back slightly mid-turn, and grows
-//   into the details panel (its back). The page behind blurs in.
-// - It reads as a real card, not a flat sheet:
-//   - thickness: EDGE_LAYERS slices stacked between the faces show a solid edge when the
-//     card is side-on;
-//   - light: each face darkens as it turns away from the viewer and brightens as it turns
-//     back, and a soft highlight sweeps across it;
-//   - shadow: a deeper shadow while it is lifted.
-// - Closing (Esc, the × button, a click outside) plays it all backwards into the card's slot.
+// A project card that opens into its details: a "container transform".
+// - Clicking the card (or Enter / Space on its button) opens a native modal <dialog>. One box,
+//   with the card's background, border and corners, grows from the card's place in the grid
+//   to the centred details panel, while the page behind blurs in.
+// - Nothing inside ever reflows: the card's content keeps the card's exact size and the
+//   details keep the panel's exact size, both pinned to the box's centre. The card's
+//   content fades out early, the details fade (and rise slightly) in late, so the box looks
+//   like the card turning into the panel, with no text squeezing or jumping.
+// - Closing (Esc, the × button, a click outside) runs it backwards into the card's slot.
 // - The card in the grid is hidden while its twin is out, so they read as one object.
 // - Reduced motion: opens and closes instantly.
-// The faces are server-rendered and passed in: `front` is the card exactly as the grid shows
-// it; `back` is the details (a ProjectPager). Only the motion lives here.
+// `front` is the card exactly as the grid shows it; `back` is the details (one page, or a
+// ProjectPager). Both are server-rendered; only the motion lives here.
 
-const OPEN_MS = 900;
-const CLOSE_MS = 700;
-const EASE = "cubic-bezier(0.65, 0, 0.35, 1)"; // ease-in-out: a turn starts and lands gently
-const LIFT = 160; // px the card rises towards the viewer at mid-turn
-const TIP = 10; // degrees it tips back (about the horizontal axis) at mid-turn
-const THICKNESS = 8; // px between the two faces
-const EDGE_LAYERS = 9;
-const PANEL_MAX_W = 760; // px
-const PANEL_MAX_H = 520; // px
+const OPEN_MS = 560;
+const CLOSE_MS = 420;
+const EASE_OUT = "cubic-bezier(0.2, 0, 0, 1)"; // emphasised decelerate: quick start, long settle
+const EASE_IN_OUT = "cubic-bezier(0.4, 0, 0.2, 1)";
+const PANEL_MAX_W = 820; // px
+const PANEL_MAX_H = 640; // px
 const GUTTER = 16; // px, minimum space around the panel
-const SHADE = 0.55; // how dark a face gets when side-on
 
 type Props = { title: string; front: ReactNode; back: ReactNode };
 type Rect = { left: number; top: number; width: number; height: number };
 
 const box = (r: Rect) => ({ left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
-// One transform shape for every keyframe so the browser interpolates each part on its own.
-const pose = (lift: number, tip: number, turn: number) =>
-  `translateZ(${lift}px) rotateX(${tip}deg) rotateY(${turn}deg)`;
 
 export function ProjectFlip({ title, front, back }: Props) {
   const slot = useRef<HTMLDivElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
   const closer = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
-  const flipper = useRef<HTMLDivElement>(null);
-  const frontCard = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const frontLayer = useRef<HTMLDivElement>(null);
+  const backLayer = useRef<HTMLDivElement>(null);
   const running = useRef<Animation[]>([]);
   const closing = useRef(false);
 
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const q = (sel: string) => flipper.current!.querySelector<HTMLElement>(sel)!;
 
-  // Stop every animation this component started, including the backdrop's. A finished
+  // Cancel every animation this component started, the backdrop's included. A finished
   // animation with `fill: "forwards"` keeps applying its last frame until cancelled: left on
-  // the ::backdrop, it would hide the blur on every later open.
+  // the ::backdrop it would hide the blur on every later open.
   const stop = () => {
     running.current.forEach((a) => a.cancel());
     running.current = [];
@@ -66,76 +56,58 @@ export function ProjectFlip({ title, front, back }: Props) {
     return a;
   };
 
-  // Where the open panel sits: centred, a fixed card shape that fits the screen.
+  // The open panel: centred, up to PANEL_MAX_W wide, as tall as its content (the tallest
+  // page, for a pager), within the screen. The details are laid out at that size once, here.
   const panelRect = (): Rect => {
+    const b = backLayer.current!;
     const width = Math.min(PANEL_MAX_W, window.innerWidth - GUTTER * 2);
-    // Phones stack the photo above the text, so there the panel may use most of the screen.
-    const maxH = window.innerWidth < 640 ? Infinity : PANEL_MAX_H;
-    const height = Math.min(maxH, window.innerHeight * 0.86);
+    b.style.width = `${width}px`;
+    b.style.height = "auto";
+    const pages = b.querySelectorAll<HTMLElement>("[data-page-body]");
+    const nav = b.querySelector<HTMLElement>("[data-pager-nav]");
+    const natural =
+      pages.length > 1
+        ? Math.max(...Array.from(pages, (p) => p.scrollHeight)) + (nav?.offsetHeight ?? 0)
+        : (b.firstElementChild as HTMLElement).scrollHeight;
+    const maxH = Math.min(window.innerWidth < 640 ? Infinity : PANEL_MAX_H, window.innerHeight - GUTTER * 2);
+    const height = Math.min(natural, maxH);
+    b.style.height = `${height}px`;
     return { left: (window.innerWidth - width) / 2, top: (window.innerHeight - height) / 2, width, height };
-  };
-
-  // The turn itself, from `a` to `b`: flight, thickness, light and shadow move together.
-  const turn = (a: Rect, b: Rect, opening: boolean, duration: number) => {
-    const opts = { duration, easing: EASE, fill: "forwards" as const };
-    const [t0, t1] = opening ? [0, 180] : [180, 0];
-    const fly = play(
-      flipper.current!,
-      [
-        { ...box(a), transform: pose(0, 0, t0) },
-        { offset: 0.5, transform: pose(LIFT, TIP, 90) },
-        { ...box(b), transform: pose(0, 0, t1) },
-      ],
-      opts,
-    );
-    // Light: the face turning away darkens towards side-on; the one turning in brightens.
-    const away = opening ? "[data-face=front]" : "[data-face=back]";
-    const toward = opening ? "[data-face=back]" : "[data-face=front]";
-    play(q(`${away} [data-shade]`), [{ opacity: 0 }, { opacity: SHADE }], { ...opts, duration: duration / 2, easing: "ease-in" });
-    play(q(`${toward} [data-shade]`), [{ opacity: SHADE }, { opacity: 0 }], {
-      ...opts,
-      duration: duration / 2,
-      delay: duration / 2,
-      easing: "ease-out",
-      fill: "both",
-    });
-    // A highlight sweeps across the face that is coming into view.
-    play(q(`${toward} [data-glare]`), [{ opacity: 0, backgroundPosition: "120% 0" }, { opacity: 1, offset: 0.4 }, { opacity: 0, backgroundPosition: "-20% 0" }], {
-      ...opts,
-      duration: duration * 0.6,
-      delay: duration * 0.4,
-      fill: "both",
-    });
-    // Deeper shadow while lifted.
-    play(q("[data-shadow]"), [{ opacity: 0.35 }, { opacity: 1, offset: 0.5 }, { opacity: 0.35 }], opts);
-    return fly;
   };
 
   const open = () => {
     const d = dialog.current;
-    const f = flipper.current;
+    const p = panel.current;
     const s = slot.current;
-    if (!d || !f || !s || d.open) return;
+    if (!d || !p || !s || d.open) return;
     stop();
     const from = s.getBoundingClientRect();
-    // The front keeps the card's exact size the whole way, so nothing reflows.
-    frontCard.current!.style.width = `${from.width}px`;
-    frontCard.current!.style.height = `${from.height}px`;
+    // The card's content keeps the card's exact size the whole way.
+    frontLayer.current!.style.width = `${from.width}px`;
+    frontLayer.current!.style.height = `${from.height}px`;
+    frontLayer.current!.style.opacity = "0";
     d.showModal();
-    closer.current?.focus({ preventScroll: true }); // keys (Esc, ←/→) land in the dialog
+    closer.current?.focus({ preventScroll: true }); // Esc and ←/→ land in the dialog
     const to = panelRect();
-    Object.assign(f.style, box(to), { transform: pose(0, 0, 180) });
+    Object.assign(p.style, box(to));
     s.style.visibility = "hidden";
     if (reduced()) return;
-    turn(from, to, true, OPEN_MS);
-    play(d, [{ opacity: 0 }, { opacity: 1 }], { duration: OPEN_MS * 0.6, easing: "ease-out", pseudoElement: "::backdrop" });
+    const opts = { duration: OPEN_MS, easing: EASE_OUT, fill: "both" as const };
+    play(p, [box(from), box(to)], opts);
+    play(frontLayer.current!, [{ opacity: 1 }, { opacity: 0 }], { ...opts, duration: OPEN_MS * 0.3, easing: "linear" });
+    play(backLayer.current!, [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], {
+      ...opts,
+      duration: OPEN_MS * 0.65,
+      delay: OPEN_MS * 0.3,
+    });
+    play(d, [{ opacity: 0 }, { opacity: 1 }], { duration: OPEN_MS, easing: "ease-out", pseudoElement: "::backdrop" });
   };
 
   const close = () => {
     const d = dialog.current;
-    const f = flipper.current;
+    const p = panel.current;
     const s = slot.current;
-    if (!d || !f || !s || !d.open || closing.current) return;
+    if (!d || !p || !s || !d.open || closing.current) return;
     const finish = () => {
       // Show the card again first: focus can only return to a visible button.
       s.style.visibility = "";
@@ -147,20 +119,24 @@ export function ProjectFlip({ title, front, back }: Props) {
     if (reduced()) return finish();
     closing.current = true;
     stop();
-    const at = { ...panelRect(), left: parseFloat(f.style.left), top: parseFloat(f.style.top) };
-    const fly = turn(at, s.getBoundingClientRect(), false, CLOSE_MS);
-    play(d, [{ opacity: 1 }, { opacity: 0 }], { duration: CLOSE_MS, easing: "ease-in", fill: "forwards", pseudoElement: "::backdrop" });
-    fly.onfinish = finish;
+    const at = p.getBoundingClientRect();
+    const to = s.getBoundingClientRect();
+    const opts = { duration: CLOSE_MS, easing: EASE_IN_OUT, fill: "both" as const };
+    const shrink = play(p, [box(at), box(to)], opts);
+    play(backLayer.current!, [{ opacity: 1 }, { opacity: 0 }], { ...opts, duration: CLOSE_MS * 0.35, easing: "linear" });
+    play(frontLayer.current!, [{ opacity: 0 }, { opacity: 1 }], { ...opts, duration: CLOSE_MS * 0.45, delay: CLOSE_MS * 0.55 });
+    play(d, [{ opacity: 1 }, { opacity: 0 }], { ...opts, easing: "ease-in", pseudoElement: "::backdrop" });
+    shrink.onfinish = finish;
   };
 
   // Keep the open panel centred and sized when the window changes.
   useEffect(() => {
     const onResize = () => {
       const d = dialog.current;
-      const f = flipper.current;
-      if (!d?.open || !f || closing.current) return;
+      const p = panel.current;
+      if (!d?.open || !p || closing.current) return;
       running.current.forEach((a) => a.finish());
-      Object.assign(f.style, box(panelRect()));
+      Object.assign(p.style, box(panelRect()));
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -170,20 +146,8 @@ export function ProjectFlip({ title, front, back }: Props) {
     e.preventDefault(); // Esc: animate out instead of vanishing
     close();
   };
-  // A click that lands on the <dialog> itself (not the card) is a click on the backdrop.
+  // A click that lands on the <dialog> itself (not the panel) is a click on the backdrop.
   const onDialogClick = (e: MouseEvent) => e.target === e.currentTarget && close();
-
-  const half = THICKNESS / 2;
-  const overlays = (
-    <>
-      <span data-shade aria-hidden className="pointer-events-none absolute inset-0 rounded-[inherit] bg-black opacity-0" />
-      <span
-        data-glare
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(105deg,transparent_35%,rgb(255_255_255/0.28)_50%,transparent_65%)] bg-size-[250%_100%] opacity-0 mix-blend-soft-light"
-      />
-    </>
-  );
 
   return (
     <>
@@ -205,45 +169,21 @@ export function ProjectFlip({ title, front, back }: Props) {
         aria-label={`${title}: details`}
         onCancel={onCancel}
         onClick={onDialogClick}
-        className="m-0 h-full max-h-none w-full max-w-none overflow-visible bg-transparent p-0 perspective-[1400px] backdrop:bg-black/35 backdrop:backdrop-blur-md"
+        className="m-0 h-full max-h-none w-full max-w-none overflow-visible bg-transparent p-0 backdrop:bg-black/35 backdrop:backdrop-blur-md"
       >
-        <div ref={flipper} className="fixed transform-3d">
-          {/* Shadow on the "table" under the card; deepens while the card is lifted. */}
+        {/* The box that grows: the card's surface, border and corners. */}
+        <div ref={panel} className="fixed overflow-hidden rounded-xl bg-card text-card-foreground shadow-2xl ring-1 ring-foreground/10">
+          {/* The card's content at the card's size (its own surface comes from the box). */}
           <div
-            data-shadow
+            ref={frontLayer}
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-xl opacity-35 shadow-[0_40px_80px_-20px_rgb(0_0_0/0.6),0_20px_40px_-25px_rgb(0_0_0/0.5)]"
-            style={{ transform: `translateZ(-${half + 1}px)` }}
-          />
-          {/* Thickness: slices between the faces, seen only when the card is side-on. */}
-          {Array.from({ length: EDGE_LAYERS }, (_, i) => (
-            <div
-              key={i}
-              aria-hidden
-              className="absolute inset-0 rounded-xl bg-muted ring-1 ring-foreground/15"
-              style={{ transform: `translateZ(${-half + 1 + (i * (THICKNESS - 2)) / (EDGE_LAYERS - 1)}px)` }}
-            />
-          ))}
-          {/* Front: the card as the grid shows it, centred on a face that grows with the flight. */}
-          <div
-            data-face="front"
-            aria-hidden
-            className="absolute inset-0 grid place-items-center overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 backface-hidden"
-            style={{ transform: `translateZ(${half}px)` }}
+            className="pointer-events-none absolute top-1/2 left-1/2 -translate-1/2 *:h-full **:data-[slot=card]:bg-transparent **:data-[slot=card]:ring-0"
           >
-            <div ref={frontCard} className="*:h-full **:data-[slot=card]:bg-transparent **:data-[slot=card]:ring-0">
-              {front}
-            </div>
-            {overlays}
+            {front}
           </div>
-          {/* Back: the details. */}
-          <div
-            data-face="back"
-            className="absolute inset-0 overflow-hidden rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10 backface-hidden"
-            style={{ transform: `rotateY(180deg) translateZ(${half}px)` }}
-          >
+          {/* The details at the panel's size. */}
+          <div ref={backLayer} className="absolute top-1/2 left-1/2 -translate-1/2">
             {back}
-            {overlays}
             <button
               ref={closer}
               type="button"

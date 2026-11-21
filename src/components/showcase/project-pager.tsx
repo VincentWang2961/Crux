@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Pages on the back of a project card (project-flip.tsx), for when one face can't hold it all.
+// Pages in a project's details panel (project-flip.tsx), only for a project whose details
+// set `morePages`: most fit on one page and never use this.
 // - The pages sit side by side in a horizontal scroll-snap track, so a swipe (touch or
 //   trackpad) turns a page natively, with momentum, and lands on a page edge.
 // - The bar at the bottom names the current page and has ‹ › buttons and one dot per page;
@@ -84,12 +85,12 @@ export function ProjectPager({ pages }: { pages: Page[] }) {
             inert={i !== index}
             className="h-full w-full shrink-0 snap-start snap-always overflow-y-auto overscroll-y-contain [mask-image:linear-gradient(to_bottom,#000_calc(100%-2rem),transparent)]"
           >
-            <div className="px-6 pt-6 pb-10 sm:px-8 sm:pt-8">{p.content}</div>
+            <div data-page-body>{p.content}</div>
           </section>
         ))}
       </div>
 
-      <nav aria-label="Pages" className="flex items-center gap-2 border-t px-3 py-2">
+      <nav data-pager-nav aria-label="Pages" className="flex items-center gap-2 border-t px-3 py-2">
         <button type="button" onClick={() => go(index - 1)} disabled={index === 0} aria-label="Previous page" className={arrow}>
           <ChevronLeft className="size-4" />
         </button>

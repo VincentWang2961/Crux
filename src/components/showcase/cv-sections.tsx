@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { IconBrandGithub, IconBrandLinkedin, IconBrandSteam, IconMail } from "@tabler/icons-react";
-import { ArrowUpRight, RotateCw } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -21,6 +21,7 @@ import {
   skillGroups,
 } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
+import { DetailsHint } from "./details-hint";
 import { OrgLogo } from "./org-logo";
 import { PortraitCard } from "./portrait-card";
 import { ProjectFlip } from "./project-flip";
@@ -199,7 +200,7 @@ export function Projects() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 text-sm leading-relaxed text-foreground/80">
-                {p.summary}
+                {p.details ? <DetailsHint text={p.summary} /> : p.summary}
               </CardContent>
               <CardFooter className="flex flex-wrap gap-1.5">
                 {p.stack.map((t) => (
@@ -207,12 +208,6 @@ export function Projects() {
                     {t}
                   </Badge>
                 ))}
-                {p.details && (
-                  <span className="ml-auto flex items-center gap-1 font-mono text-xs text-muted-foreground transition-colors group-hover:text-foreground">
-                    <RotateCw aria-hidden className="size-3.5 transition-transform duration-500 group-hover:rotate-180" />
-                    Details
-                  </span>
-                )}
               </CardFooter>
             </Card>
           );
@@ -232,109 +227,113 @@ export function Projects() {
   );
 }
 
-// The back of a project card (project-flip.tsx): pages of a ProjectPager. An overview with
-// the photo, one page per section, then the stack and links.
+// A project's details panel (project-flip.tsx). One page: photo beside the text (above it on
+// phones), then the overview, the sections, the stack and the links. Only `morePages` adds
+// further pages, and then a ProjectPager.
+type Details = NonNullable<(typeof projects)[number]["details"]>;
+type DetailSection = Details["sections"][number];
+
+function SectionList({ sections }: { sections: DetailSection[] }) {
+  return sections.map((sec) => (
+    <section key={sec.title}>
+      <h4 className="font-mono text-xs text-muted-foreground">{sec.title}</h4>
+      <ul className="mt-2 flex flex-col gap-1.5 text-sm leading-relaxed text-foreground/85">
+        {sec.items.map((item) => (
+          <li key={item} className="flex gap-2.5">
+            <span aria-hidden className="text-muted-foreground">
+              –
+            </span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ));
+}
+
 function ProjectDetails({ project: p }: { project: (typeof projects)[number] }) {
   const d = p.details!;
-  const label = "font-mono text-xs text-muted-foreground";
-  const head = (
-    <header className="pr-10">
-      <p className={label}>$ cat projects/{p.name.toLowerCase().replaceAll(" ", "-")}.md</p>
-      <h3 className="mt-1.5 text-xl font-semibold tracking-tight">{p.name}</h3>
-      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-        <span>
-          {p.kind}
-          {p.grade && ` · ${p.grade}`}
-        </span>
-        <span aria-hidden>·</span>
-        <span className="font-mono text-xs tabular-nums">{p.period}</span>
-      </p>
-    </header>
-  );
-  const pages = [
-    {
-      label: "Overview",
-      content: (
-        <div className={cn("grid items-start gap-5", d.image && "sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-7")}>
-          {d.image && (
-            // A wide crop on phones; the whole photo, at its own shape, beside the text from sm up.
-            <div
-              className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10 sm:aspect-(--ratio)"
-              style={{ "--ratio": `${d.image.width} / ${d.image.height}` } as CSSProperties}
-            >
-              <Image
-                src={d.image.src}
-                alt={d.image.alt}
-                fill
-                sizes="(min-width: 640px) 300px, 90vw"
-                className="object-cover object-[50%_70%] sm:object-center"
-              />
-            </div>
-          )}
-          <div className="flex flex-col gap-4">
-            {head}
-            <p className="text-sm leading-relaxed text-foreground/85">{d.overview}</p>
-          </div>
+  const links = [...(d.links ?? []), ...(p.href ? [{ label: "View project", href: p.href }] : [])];
+  const main = (
+    <div className={cn("grid gap-5 p-5 sm:gap-6 sm:p-8", d.image && "sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] sm:items-center sm:gap-8")}>
+      {d.image && (
+        // A 16:9 crop on phones; the whole photo at its own shape beside the text from sm up,
+        // centred against the text column.
+        <div
+          className="relative aspect-video overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10 sm:aspect-(--ratio)"
+          style={{ "--ratio": `${d.image.width} / ${d.image.height}` } as CSSProperties}
+        >
+          <Image
+            src={d.image.src}
+            alt={d.image.alt}
+            fill
+            sizes="(min-width: 640px) 320px, 90vw"
+            className="object-cover object-[50%_70%] sm:object-center"
+          />
         </div>
-      ),
-    },
-    ...d.sections.map((sec) => ({
-      label: sec.title,
-      content: (
-        <div className="flex flex-col gap-4">
-          <h4 className="pr-10 text-lg font-semibold tracking-tight">{sec.title}</h4>
-          <ul className="flex flex-col gap-2.5 text-sm leading-relaxed text-foreground/85">
-            {sec.items.map((item) => (
-              <li key={item} className="flex gap-2.5">
-                <span aria-hidden className="text-muted-foreground">
-                  –
-                </span>
-                <span>{item}</span>
-              </li>
+      )}
+      <div className="flex min-w-0 flex-col gap-4 sm:gap-5">
+        <header className="pr-10">
+          <h3 className="text-xl font-semibold tracking-tight">{p.name}</h3>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+            <span>
+              {p.kind}
+              {p.grade && ` · ${p.grade}`}
+            </span>
+            <span aria-hidden>·</span>
+            <span className="font-mono text-xs tabular-nums">{p.period}</span>
+          </p>
+        </header>
+        <p className="text-sm leading-relaxed text-foreground/85">{d.overview}</p>
+        <SectionList sections={d.sections} />
+        <div className="flex flex-wrap gap-1.5">
+          {d.stack.map((t) => (
+            <Badge key={t} variant="outline">
+              {t}
+            </Badge>
+          ))}
+        </div>
+        {links.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {links.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors hover:bg-muted"
+              >
+                {l.href.includes("github.com") && <IconBrandGithub aria-hidden className="size-4" stroke={1.6} />}
+                {l.label}
+                <ArrowUpRight aria-hidden className="size-4 text-muted-foreground" />
+              </a>
             ))}
-          </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (!d.morePages?.length) {
+    return (
+      <div className="h-full overflow-y-auto overscroll-contain" data-page-body>
+        {main}
+        {/* "More below": fades out as you reach the end; absent when it all fits (globals.css). */}
+        <div aria-hidden className="details-more pointer-events-none sticky bottom-0 -mt-14 h-14 bg-linear-to-t from-card to-transparent" />
+      </div>
+    );
+  }
+  const pages = [
+    { label: "Overview", content: main },
+    ...d.morePages.map((pg) => ({
+      label: pg.label,
+      content: (
+        <div className="flex flex-col gap-5 p-6 pr-14 sm:p-8 sm:pr-16">
+          <h3 className="text-xl font-semibold tracking-tight">{pg.label}</h3>
+          <SectionList sections={pg.sections} />
         </div>
       ),
     })),
-    {
-      label: d.links?.length ? "Stack & links" : "Stack",
-      content: (
-        <div className="flex flex-col gap-5">
-          <h4 className="pr-10 text-lg font-semibold tracking-tight">Tech stack</h4>
-          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[7rem_1fr]">
-            {d.stack.map((g) => (
-              <div key={g.group} className="contents">
-                <dt className={cn(label, "pt-1")}>{g.group}</dt>
-                <dd className="flex flex-wrap gap-1.5">
-                  {g.items.map((t) => (
-                    <Badge key={t} variant="outline">
-                      {t}
-                    </Badge>
-                  ))}
-                </dd>
-              </div>
-            ))}
-          </dl>
-          {(d.links?.length || p.href) && (
-            <div className="flex flex-wrap gap-2 border-t pt-4">
-              {[...(d.links ?? []), ...(p.href ? [{ label: "View project", href: p.href }] : [])].map((l) => (
-                <a
-                  key={l.href}
-                  href={l.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-9 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors hover:bg-muted"
-                >
-                  {l.href.includes("github.com") && <IconBrandGithub aria-hidden className="size-4" stroke={1.6} />}
-                  {l.label}
-                  <ArrowUpRight aria-hidden className="size-4 text-muted-foreground" />
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-      ),
-    },
   ];
   return <ProjectPager pages={pages} />;
 }
