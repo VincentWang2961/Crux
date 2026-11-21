@@ -11,7 +11,9 @@ import { cn } from "@/lib/utils";
 //   the three squares; light and dark use the organisation's own light / dark logo colours.
 // - Outlier: outlier.ai favicon (gradient ring on a black disc).
 // - Uber: wordmark from Simple Icons, near-black / near-white per theme.
-// - The University of Western Australia: uwa.edu.au uwacrest-small-white.svg, crest only.
+// - The University of Western Australia: crest only (wordmark removed). Light: the positive
+//   logo (blue ribbon, white lettering; Wikipedia's "The University of Western Australia logo.svg").
+//   Dark: uwa.edu.au uwacrest-small-white.svg (white ribbon, blue lettering) → uwa-dark.svg.
 // - Jiangsu University of Technology: jsut.edu.cn logo.svg (a PNG inside an SVG), emblem only.
 // To add one: drop the file in public/logos/, add its key to OrgLogoKey (site-data.ts) and
 // re-run `python3 scripts/measure-logos.py --trim`.

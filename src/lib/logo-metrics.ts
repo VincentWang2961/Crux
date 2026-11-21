@@ -46,9 +46,10 @@ export const LOGO_METRICS = {
   },
   "uwa": {
     "src": "/logos/uwa.svg",
+    "darkSrc": "/logos/uwa-dark.svg",
     "aspect": 0.8809,
     "footprint": {
-      "light": 0.6895,
+      "light": 0.8545,
       "dark": 0.8511
     }
   },

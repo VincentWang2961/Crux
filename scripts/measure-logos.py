@@ -4,8 +4,8 @@
 What makes two marks look the same size is mostly the area of their *visible outline*: the
 convex hull of the parts that stand out from the page. Not their bounding box (a disc fills
 less of its box than a shield), and not their ink (an open wave reads as one shape). So for
-every logo (<key>.svg or <key>.png; <key>-dark.* is its dark-theme twin with the same
-geometry), and for each theme, this script:
+every logo (<key>.svg or <key>.png; <key>-dark.* is its dark-theme twin,
+same aspect), and for each theme, this script:
   1. renders the file and weighs each pixel by alpha × its lightness contrast with that
      theme's page background (CIE L*), so white on white or black on near-black counts
      as unseen;
@@ -117,16 +117,16 @@ def main() -> None:
     files = sorted(p for p in LOGOS.iterdir() if p.suffix in {".svg", ".png"} and "-dark" not in p.stem)
     metrics = {}
     for path in files:
-        if trim:
-            img = render(path, RENDER)
-            box = ink_box(img)
-            if box != (0, 0, img.width, img.height):
-                if path.suffix == ".svg":
-                    trim_svg(path, img, box)
-                    for dark in LOGOS.glob(f"{path.stem}-dark.svg"):
-                        trim_svg(dark, img, box)
+        if trim:  # each file by its own ink: a dark twin may be drawn differently
+            for f in [path, *LOGOS.glob(f"{path.stem}-dark.*")]:
+                img = render(f, RENDER)
+                box = ink_box(img)
+                if box == (0, 0, img.width, img.height):
+                    continue
+                if f.suffix == ".svg":
+                    trim_svg(f, img, box)
                 else:
-                    Image.open(path).crop(box).save(path, optimize=True)
+                    Image.open(f).crop(box).save(f, optimize=True)
         img = render(path, RENDER)
         dark = next(iter(LOGOS.glob(f"{path.stem}-dark.*")), None)
         metrics[path.stem] = {

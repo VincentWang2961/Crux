@@ -168,8 +168,9 @@ optional `note` line and **one short `summary` paragraph** (no bullet lists).
     page background, so white on white or black on near-black counts as unseen. It then takes the
     convex hull of the visible pixels. The generated `src/lib/logo-metrics.ts` stores `aspect` and
     `footprint.light` / `footprint.dark`: the hull's area as a share of the file's box.
-    - For example, a disc's footprint is 0.80. The UWA crest's is 0.69 on white, where its white
-      ribbon vanishes, and 0.85 on dark.
+    - For example, a disc's footprint is 0.80, a shield's about 0.83, and the open Woolworths wave's
+      0.77. A part that vanishes on one theme (white on white) shrinks that theme's footprint, which
+      enlarges the mark to compensate. Better still, give the mark a `-dark` twin, as UWA has.
   - **Formula** (in `org-logo.tsx`):
     - box area = `T² · footprint⁻¹ · elongation^-G`
     - width = `√(area · aspect)`, height = `√(area / aspect)`
@@ -192,9 +193,14 @@ Built the same way as Experience: each entry (`education` in `site-data.ts`) has
 (specialisation, result) and **one short `summary` paragraph**, with the institution's mark before it
 and the same staggered `<Reveal>` with the logo popping in. Both degrees stay listed, although
 LinkedIn shows only UWA.
-- **Logos:** the same optically sized marks: `public/logos/uwa.svg` (UWA's own crest SVG with the
-  wordmark paths removed) and `public/logos/jsut.png` (JSUT only publishes its emblem as a raster inside
-  an SVG; cropped on its transparent background, 128 px tall, 64-colour palette).
+- **Logos:** the same optically sized marks.
+  - **UWA:** the crest only, with the wordmark paths removed, in two versions.
+    - Light theme: `public/logos/uwa.svg`, the positive logo for light backgrounds, with a blue
+      ribbon and white lettering.
+    - Dark theme: `public/logos/uwa-dark.svg`, from uwa.edu.au's reversed crest, with a white ribbon
+      and blue lettering. On white it would vanish.
+  - **JSUT:** `public/logos/jsut.png`. JSUT only publishes its emblem as a raster inside an SVG, so
+    it is cropped on its transparent background, 128 px tall, with a 64-colour palette.
 
 ### Projects → status lights (Crux, home lab)
 
