@@ -67,6 +67,20 @@ docker compose up -d --build        # build & run the container
 docker build -t crux . && docker run -p 3000:3000 crux
 ```
 
+**Asset scripts:** these run on your machine only when assets change, and their output is committed.
+The Docker build and the deployed server never need them, nor the tools they use.
+
+| Script | Run when | Needs | Writes |
+| --- | --- | --- | --- |
+| `python3 scripts/measure-logos.py --trim` | a logo in `public/logos/` is added or replaced | `rsvg-convert` (`brew install librsvg`), Pillow (`python3 -m pip install pillow`) | trimmed logo files, `src/lib/logo-metrics.ts` |
+| `scripts/gen-uptime-hdr.py` + `avifenc` | the uptime HDR sprites change | Python, `avifenc` (libavif) | `public/uptime/hdr-*.avif` |
+| `node scripts/gen-land-mask.mjs <deps-dir> src/lib/land-mask.ts` | the globe's land mask changes | Node, plus `world-atlas@2` and `topojson-client@3` installed in a separate folder (see the script's header) | `src/lib/land-mask.ts` |
+| `npm run translate` | a post is added or edited | `ANTHROPIC_API_KEY` | `content/posts/<slug>.<lang>.md` |
+
+**Deploying:** the logos and the status lights add no new build steps. The only new runtime
+setting is `UPTIMEROBOT_API_KEY` (see Environment variables), which must be set by hand on the
+deployment. Without it the status lights are simply hidden.
+
 Before committing, run `npm run lint` and `npm run build`; both must pass.
 
 **After every change, redeploy the container** so the maintainer can view and debug the latest version:
