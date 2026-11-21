@@ -204,36 +204,64 @@ LinkedIn shows only UWA.
 
 ### Projects → flip-open details
 
-A project with `details: { overview, highlights }` in `projects` (`site-data.ts`) opens into a
-details panel. Clicking its card turns it over. The Smart Plant Caring System (IoT) is the first
-one. Projects without `details` stay plain cards, or links with `href`.
-- **Card:** the footer shows a "↻ Details" hint, and its icon turns half a circle on hover. A
-  stretched `<button>` covers the card (`aria-haspopup="dialog"`, labelled "Show details: …"), so the
-  card's own markup stays plain. A project with both `details` and `href` puts its link
-  ("View project ↗") on the back instead.
-- **Motion** (`project-flip.tsx`, Web Animations API):
-  - The card lifts out of the grid into a native modal `<dialog>`. It flies to the centre while
-    rotating 180° about its vertical axis and rising towards the viewer mid-turn (`LIFT`,
-    `translateZ`), and its back grows to the panel's size. The page behind blurs in through
-    `::backdrop`.
-    - The panel is centred, up to 640 px wide and as tall as its content (at most 86 % of the
-      viewport, then it scrolls).
-    - The card's own width and height are kept on the front face the whole way, so nothing reflows.
-  - Timing: `OPEN_MS` is 760 ms and `CLOSE_MS` 600 ms, on an ease-in-out curve. Closing plays the
-    turn backwards into the card's current slot.
-  - The card in the grid is hidden while its twin is out, so they read as one object.
-  - Reduced motion opens and closes instantly.
-- **Closing:** Esc (animated through `onCancel`), the × button, or a click outside the panel. Focus
-  moves to the × button on open and returns to the card on close. The card is made visible again
-  before the dialog closes, so focus can land on it. The page can't scroll while the dialog is open
-  (`html:has(dialog[open])`).
-- **Back face:** rendered on the server by `ProjectDetails` in `cv-sections.tsx`:
-  - a `$ cat projects/<name>.md` line, the title, kind and period;
-  - the overview;
-  - "What I did" (`highlights`);
-  - the stack badges.
-- Don't transform the `<dialog>` itself. Only the inner flipper moves. The dialog carries just the
-  `perspective`.
+A project with `details` in `projects` (`site-data.ts`) opens into a details panel: clicking its card
+turns it over like a solid card. The Smart Plant Caring System (IoT) is the first one. Projects
+without `details` stay plain cards, or links with `href`.
+
+**Data:** `details` has these fields:
+- `image` (optional): a photo in `public/projects/`, with its pixel size;
+- `overview`: one paragraph;
+- `sections`: a list of `{ title, items }`;
+- `stack`: a list of `{ group, items }`;
+- `links` (optional): a list of `{ label, href }`.
+
+The IoT copy comes from its GitHub README and the commit history (Vincent's own part).
+
+**Card:** the footer shows a "↻ Details" hint, and its icon turns half a circle on hover. A
+stretched `<button>` covers the card (`aria-haspopup="dialog"`, labelled "Show details: …").
+
+**Motion** (`project-flip.tsx`, Web Animations API):
+- The card lifts out of the grid into a native modal `<dialog>` and flies to the centre. On the way
+  it turns 180° about its vertical axis, rises towards the viewer (`LIFT`, 160 px) and tips back
+  (`TIP`, 10°) at mid-turn, and grows into the panel. The page behind blurs in through `::backdrop`.
+  - Every keyframe uses the same transform shape, `translateZ() rotateX() rotateY()`, so each part
+    interpolates on its own.
+  - Timing: `OPEN_MS` is 900 ms and `CLOSE_MS` 700 ms, on an ease-in-out curve. Closing plays the
+    turn backwards into the card's slot.
+- **It looks solid:**
+  - **Thickness:** `EDGE_LAYERS` slices stacked between the two faces (`THICKNESS`, 8 px) form an
+    edge that shows when the card is side-on. The faces sit at ±4 px with `backface-visibility:
+    hidden`.
+  - **Light:** each face has a `[data-shade]` layer that darkens it towards side-on (`SHADE`), and a
+    `[data-glare]` highlight that sweeps across the face coming into view.
+  - **Shadow:** `[data-shadow]` deepens while the card is lifted.
+- **Panel:** centred, up to 760 × 520 px. On phones (< 640 px wide) it can be up to 86 % of the
+  screen height. The front keeps the card's own size, centred on a face that grows, so nothing
+  reflows.
+- The card in the grid is hidden while its twin is out. Reduced motion opens and closes instantly.
+- **Backdrop bug, fixed:** every animation started is kept in `running` and cancelled by `stop()`
+  when closing finishes and before the next open. A finished `fill: "forwards"` animation on
+  `::backdrop` keeps applying its last frame (opacity 0), which hid the blur on every open after
+  the first.
+
+**Back face** (a `ProjectPager`, `project-pager.tsx`; pages built in `ProjectDetails`, `cv-sections.tsx`):
+- **Pages, in order:**
+  1. **Overview:** the photo and the paragraph. Side by side from `sm` up, with the whole photo at
+     its own aspect ratio. On phones, a 4:3 crop above the text.
+  2. **One page per section**, such as "What I did" and "How it works".
+  3. **"Stack & links":** the stack grouped in a list, then link buttons. GitHub links get the
+     GitHub mark.
+- **Paging:** the pages sit in a horizontal scroll-snap track, so a swipe on touch or a trackpad
+  turns a page natively.
+  - The bottom bar has ‹ › buttons, the page name with "n/N", and one dot per page (the current dot
+    is wider). ←/→ also turn pages while the dialog is open.
+  - The pager returns to page 1 each time the dialog opens. Pages that aren't showing are `inert`.
+  - A page that is still too tall scrolls on its own, with a fade at its bottom edge.
+- **Closing:** Esc (animated through `onCancel`), the × button, or a click outside. On open, focus
+  moves to × so that Esc and the arrow keys land in the dialog. On close, focus returns to the card,
+  which is shown again first. The page can't scroll while the dialog is open.
+- Don't transform the `<dialog>` itself. Only the inner flipper moves, and the dialog carries just
+  the `perspective`.
 
 ### Projects → status lights (Crux, home lab)
 

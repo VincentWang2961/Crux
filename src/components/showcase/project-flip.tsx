@@ -3,53 +3,112 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode, type SyntheticEvent } from "react";
 import { X } from "lucide-react";
 
-// A project card that turns over into its details.
-// - Clicking the card (or Enter / Space on its button) lifts it out of the grid into a
-//   native modal <dialog>: it flies to the centre of the screen while rotating 180° about its
-//   vertical axis, and its back, the details panel, grows to full size. It rises towards the
-//   viewer mid-turn (translateZ), and the page behind blurs in.
-// - Closing (Esc, the × button, a click outside) plays it backwards into the card's slot.
-// - The card in the grid is hidden while its twin is out, so the two read as one object.
+// A project card that turns over, as a solid object, into its details.
+// - Clicking the card (or Enter / Space on its button) lifts it out of the grid into a native
+//   modal <dialog>. It flies to the centre of the screen while turning 180° about its
+//   vertical axis, rising towards the viewer and tipping back slightly mid-turn, and grows
+//   into the details panel (its back). The page behind blurs in.
+// - It reads as a real card, not a flat sheet:
+//   - thickness: EDGE_LAYERS slices stacked between the faces show a solid edge when the
+//     card is side-on;
+//   - light: each face darkens as it turns away from the viewer and brightens as it turns
+//     back, and a soft highlight sweeps across it;
+//   - shadow: a deeper shadow while it is lifted.
+// - Closing (Esc, the × button, a click outside) plays it all backwards into the card's slot.
+// - The card in the grid is hidden while its twin is out, so they read as one object.
 // - Reduced motion: opens and closes instantly.
 // The faces are server-rendered and passed in: `front` is the card exactly as the grid shows
-// it; `back` is the details. Only the motion lives here.
+// it; `back` is the details (a ProjectPager). Only the motion lives here.
 
-const OPEN_MS = 760;
-const CLOSE_MS = 600;
+const OPEN_MS = 900;
+const CLOSE_MS = 700;
 const EASE = "cubic-bezier(0.65, 0, 0.35, 1)"; // ease-in-out: a turn starts and lands gently
-const LIFT = "120px"; // how far the card rises towards the viewer at mid-turn
-const PANEL_MAX_W = 640; // px
+const LIFT = 160; // px the card rises towards the viewer at mid-turn
+const TIP = 10; // degrees it tips back (about the horizontal axis) at mid-turn
+const THICKNESS = 8; // px between the two faces
+const EDGE_LAYERS = 9;
+const PANEL_MAX_W = 760; // px
+const PANEL_MAX_H = 520; // px
 const GUTTER = 16; // px, minimum space around the panel
-const PANEL_MAX_H = 0.86; // share of the viewport height
+const SHADE = 0.55; // how dark a face gets when side-on
 
 type Props = { title: string; front: ReactNode; back: ReactNode };
+type Rect = { left: number; top: number; width: number; height: number };
 
-const box = (r: { left: number; top: number; width: number; height: number }) => ({
-  left: `${r.left}px`,
-  top: `${r.top}px`,
-  width: `${r.width}px`,
-  height: `${r.height}px`,
-});
+const box = (r: Rect) => ({ left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+// One transform shape for every keyframe so the browser interpolates each part on its own.
+const pose = (lift: number, tip: number, turn: number) =>
+  `translateZ(${lift}px) rotateX(${tip}deg) rotateY(${turn}deg)`;
 
 export function ProjectFlip({ title, front, back }: Props) {
   const slot = useRef<HTMLDivElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
+  const closer = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const flipper = useRef<HTMLDivElement>(null);
-  const frontFace = useRef<HTMLDivElement>(null);
-  const backInner = useRef<HTMLDivElement>(null);
-  const motion = useRef<Animation | null>(null);
+  const frontCard = useRef<HTMLDivElement>(null);
+  const running = useRef<Animation[]>([]);
   const closing = useRef(false);
 
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const q = (sel: string) => flipper.current!.querySelector<HTMLElement>(sel)!;
 
-  // Where the open panel sits: centred, up to PANEL_MAX_W wide, as tall as its content.
-  const panelRect = () => {
+  // Stop every animation this component started, including the backdrop's. A finished
+  // animation with `fill: "forwards"` keeps applying its last frame until cancelled: left on
+  // the ::backdrop, it would hide the blur on every later open.
+  const stop = () => {
+    running.current.forEach((a) => a.cancel());
+    running.current = [];
+  };
+  const play = (el: Element, keyframes: Keyframe[], opts: KeyframeAnimationOptions) => {
+    const a = el.animate(keyframes, opts);
+    running.current.push(a);
+    return a;
+  };
+
+  // Where the open panel sits: centred, a fixed card shape that fits the screen.
+  const panelRect = (): Rect => {
     const width = Math.min(PANEL_MAX_W, window.innerWidth - GUTTER * 2);
-    const inner = backInner.current!;
-    inner.style.width = `${width}px`;
-    const height = Math.min(inner.scrollHeight, window.innerHeight * PANEL_MAX_H);
+    // Phones stack the photo above the text, so there the panel may use most of the screen.
+    const maxH = window.innerWidth < 640 ? Infinity : PANEL_MAX_H;
+    const height = Math.min(maxH, window.innerHeight * 0.86);
     return { left: (window.innerWidth - width) / 2, top: (window.innerHeight - height) / 2, width, height };
+  };
+
+  // The turn itself, from `a` to `b`: flight, thickness, light and shadow move together.
+  const turn = (a: Rect, b: Rect, opening: boolean, duration: number) => {
+    const opts = { duration, easing: EASE, fill: "forwards" as const };
+    const [t0, t1] = opening ? [0, 180] : [180, 0];
+    const fly = play(
+      flipper.current!,
+      [
+        { ...box(a), transform: pose(0, 0, t0) },
+        { offset: 0.5, transform: pose(LIFT, TIP, 90) },
+        { ...box(b), transform: pose(0, 0, t1) },
+      ],
+      opts,
+    );
+    // Light: the face turning away darkens towards side-on; the one turning in brightens.
+    const away = opening ? "[data-face=front]" : "[data-face=back]";
+    const toward = opening ? "[data-face=back]" : "[data-face=front]";
+    play(q(`${away} [data-shade]`), [{ opacity: 0 }, { opacity: SHADE }], { ...opts, duration: duration / 2, easing: "ease-in" });
+    play(q(`${toward} [data-shade]`), [{ opacity: SHADE }, { opacity: 0 }], {
+      ...opts,
+      duration: duration / 2,
+      delay: duration / 2,
+      easing: "ease-out",
+      fill: "both",
+    });
+    // A highlight sweeps across the face that is coming into view.
+    play(q(`${toward} [data-glare]`), [{ opacity: 0, backgroundPosition: "120% 0" }, { opacity: 1, offset: 0.4 }, { opacity: 0, backgroundPosition: "-20% 0" }], {
+      ...opts,
+      duration: duration * 0.6,
+      delay: duration * 0.4,
+      fill: "both",
+    });
+    // Deeper shadow while lifted.
+    play(q("[data-shadow]"), [{ opacity: 0.35 }, { opacity: 1, offset: 0.5 }, { opacity: 0.35 }], opts);
+    return fly;
   };
 
   const open = () => {
@@ -57,24 +116,19 @@ export function ProjectFlip({ title, front, back }: Props) {
     const f = flipper.current;
     const s = slot.current;
     if (!d || !f || !s || d.open) return;
+    stop();
     const from = s.getBoundingClientRect();
-    // The front face keeps the card's exact size the whole way, so nothing reflows.
-    frontFace.current!.style.width = `${from.width}px`;
-    frontFace.current!.style.height = `${from.height}px`;
+    // The front keeps the card's exact size the whole way, so nothing reflows.
+    frontCard.current!.style.width = `${from.width}px`;
+    frontCard.current!.style.height = `${from.height}px`;
     d.showModal();
+    closer.current?.focus({ preventScroll: true }); // keys (Esc, ←/→) land in the dialog
     const to = panelRect();
-    Object.assign(f.style, box(to), { transform: "rotateY(180deg)" });
+    Object.assign(f.style, box(to), { transform: pose(0, 0, 180) });
     s.style.visibility = "hidden";
     if (reduced()) return;
-    motion.current = f.animate(
-      [
-        { ...box(from), transform: "rotateY(0deg) translateZ(0)" },
-        { offset: 0.5, transform: `rotateY(90deg) translateZ(${LIFT})` },
-        { ...box(to), transform: "rotateY(180deg) translateZ(0)" },
-      ],
-      { duration: OPEN_MS, easing: EASE },
-    );
-    d.animate({ opacity: [0, 1] }, { duration: OPEN_MS * 0.6, easing: "ease-out", pseudoElement: "::backdrop" });
+    turn(from, to, true, OPEN_MS);
+    play(d, [{ opacity: 0 }, { opacity: 1 }], { duration: OPEN_MS * 0.6, easing: "ease-out", pseudoElement: "::backdrop" });
   };
 
   const close = () => {
@@ -86,27 +140,17 @@ export function ProjectFlip({ title, front, back }: Props) {
       // Show the card again first: focus can only return to a visible button.
       s.style.visibility = "";
       d.close();
-      opener.current?.focus({ preventScroll: true });
-      motion.current?.cancel();
-      motion.current = null;
+      stop();
       closing.current = false;
+      opener.current?.focus({ preventScroll: true });
     };
     if (reduced()) return finish();
     closing.current = true;
-    motion.current?.cancel();
-    const from = f.getBoundingClientRect();
-    const at = { left: from.left, top: from.top, width: f.offsetWidth, height: f.offsetHeight };
-    const to = s.getBoundingClientRect();
-    motion.current = f.animate(
-      [
-        { ...box(at), transform: "rotateY(180deg) translateZ(0)" },
-        { offset: 0.5, transform: `rotateY(90deg) translateZ(${LIFT})` },
-        { ...box(to), transform: "rotateY(0deg) translateZ(0)" },
-      ],
-      { duration: CLOSE_MS, easing: EASE, fill: "forwards" },
-    );
-    d.animate({ opacity: [1, 0] }, { duration: CLOSE_MS, easing: "ease-in", fill: "forwards", pseudoElement: "::backdrop" });
-    motion.current.onfinish = finish;
+    stop();
+    const at = { ...panelRect(), left: parseFloat(f.style.left), top: parseFloat(f.style.top) };
+    const fly = turn(at, s.getBoundingClientRect(), false, CLOSE_MS);
+    play(d, [{ opacity: 1 }, { opacity: 0 }], { duration: CLOSE_MS, easing: "ease-in", fill: "forwards", pseudoElement: "::backdrop" });
+    fly.onfinish = finish;
   };
 
   // Keep the open panel centred and sized when the window changes.
@@ -115,7 +159,7 @@ export function ProjectFlip({ title, front, back }: Props) {
       const d = dialog.current;
       const f = flipper.current;
       if (!d?.open || !f || closing.current) return;
-      motion.current?.finish();
+      running.current.forEach((a) => a.finish());
       Object.assign(f.style, box(panelRect()));
     };
     window.addEventListener("resize", onResize);
@@ -126,8 +170,20 @@ export function ProjectFlip({ title, front, back }: Props) {
     e.preventDefault(); // Esc: animate out instead of vanishing
     close();
   };
-  // A click that lands on the <dialog> itself (not the panel) is a click on the backdrop.
+  // A click that lands on the <dialog> itself (not the card) is a click on the backdrop.
   const onDialogClick = (e: MouseEvent) => e.target === e.currentTarget && close();
+
+  const half = THICKNESS / 2;
+  const overlays = (
+    <>
+      <span data-shade aria-hidden className="pointer-events-none absolute inset-0 rounded-[inherit] bg-black opacity-0" />
+      <span
+        data-glare
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(105deg,transparent_35%,rgb(255_255_255/0.28)_50%,transparent_65%)] bg-size-[250%_100%] opacity-0 mix-blend-soft-light"
+      />
+    </>
+  );
 
   return (
     <>
@@ -149,25 +205,51 @@ export function ProjectFlip({ title, front, back }: Props) {
         aria-label={`${title}: details`}
         onCancel={onCancel}
         onClick={onDialogClick}
-        className="m-0 h-full max-h-none w-full max-w-none overflow-visible bg-transparent p-0 perspective-[1800px] backdrop:bg-black/30 backdrop:backdrop-blur-md"
+        className="m-0 h-full max-h-none w-full max-w-none overflow-visible bg-transparent p-0 perspective-[1400px] backdrop:bg-black/35 backdrop:backdrop-blur-md"
       >
         <div ref={flipper} className="fixed transform-3d">
-          {/* Front: the card itself, centred, at its grid size. */}
-          <div aria-hidden className="absolute inset-0 grid place-items-center backface-hidden">
-            <div ref={frontFace} className="[&>*]:h-full">
+          {/* Shadow on the "table" under the card; deepens while the card is lifted. */}
+          <div
+            data-shadow
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-xl opacity-35 shadow-[0_40px_80px_-20px_rgb(0_0_0/0.6),0_20px_40px_-25px_rgb(0_0_0/0.5)]"
+            style={{ transform: `translateZ(-${half + 1}px)` }}
+          />
+          {/* Thickness: slices between the faces, seen only when the card is side-on. */}
+          {Array.from({ length: EDGE_LAYERS }, (_, i) => (
+            <div
+              key={i}
+              aria-hidden
+              className="absolute inset-0 rounded-xl bg-muted ring-1 ring-foreground/15"
+              style={{ transform: `translateZ(${-half + 1 + (i * (THICKNESS - 2)) / (EDGE_LAYERS - 1)}px)` }}
+            />
+          ))}
+          {/* Front: the card as the grid shows it, centred on a face that grows with the flight. */}
+          <div
+            data-face="front"
+            aria-hidden
+            className="absolute inset-0 grid place-items-center overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 backface-hidden"
+            style={{ transform: `translateZ(${half}px)` }}
+          >
+            <div ref={frontCard} className="*:h-full **:data-[slot=card]:bg-transparent **:data-[slot=card]:ring-0">
               {front}
             </div>
+            {overlays}
           </div>
-          {/* Back: the details panel, grown to its full size. */}
-          <div className="absolute inset-0 overflow-hidden rounded-xl bg-card text-card-foreground shadow-2xl ring-1 ring-foreground/10 backface-hidden rotate-y-180">
-            <div ref={backInner} className="max-h-[86svh] overflow-y-auto overscroll-contain">
-              {back}
-            </div>
+          {/* Back: the details. */}
+          <div
+            data-face="back"
+            className="absolute inset-0 overflow-hidden rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10 backface-hidden"
+            style={{ transform: `rotateY(180deg) translateZ(${half}px)` }}
+          >
+            {back}
+            {overlays}
             <button
+              ref={closer}
               type="button"
               onClick={close}
               aria-label="Close details"
-              className="absolute top-3 right-3 grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              className="absolute top-3 right-3 z-10 grid size-9 place-items-center rounded-full bg-card/80 text-muted-foreground backdrop-blur transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               <X className="size-4" />
             </button>

@@ -157,13 +157,20 @@ export type Project = {
   uptime?: { monitor: string; subject: string };
   /**
    * Opens the card into a details panel (project-flip.tsx): clicking turns it over. Without
-   * it, the card is a plain card (or a link, with `href`).
+   * it, the card is a plain card (or a link, with `href`). The back is paged: an overview
+   * page (photo + paragraph), one page per section, then the stack and links.
    */
   details?: {
+    /** Photo for the overview page; width/height set its aspect ratio. Files in public/projects/. */
+    image?: { src: string; alt: string; width: number; height: number };
     /** A short paragraph on what it is and why. */
     overview: string;
-    /** What I did, one line each. */
-    highlights: string[];
+    /** Each becomes its own page: a title and short lines. */
+    sections: { title: string; items: string[] }[];
+    /** Technologies by group, for the last page. */
+    stack: { group: string; items: string[] }[];
+    /** Further reading (repository, report, demo). */
+    links?: { label: string; href: string }[];
   };
 };
 
@@ -211,22 +218,54 @@ export const projects: Project[] = [
   },
   {
     name: "Smart Plant Caring System",
-    kind: "IoT sensor monitoring",
+    kind: "IoT plant care platform · team of four",
     period: "2025",
-    stack: ["ESP32", "C", "Wi-Fi"],
+    stack: ["ESP32-S3", "C/C++", "MQTT", "Flask", "GPT-4o"],
     summary:
-      "ESP32 firmware in C that collects plant sensor readings and sends them over Wi-Fi for processing and storage, " +
-      "with validated telemetry and documentation.",
+      "An indoor growing box that waters, lights and climate-controls plants from ESP32 sensors, with a Flask " +
+      "dashboard and weekly GPT-4o care reports. I built the LLM analysis, the dashboard pages and the camera firmware.",
     details: {
+      image: {
+        src: "/projects/smart-plant-care.webp",
+        alt: "Seedlings in a foil-lined grow box under LED lights, with the ESP32 board, relays, sensors and a fan wired above them",
+        width: 1500,
+        height: 2000,
+      },
       overview:
-        "A small IoT device that keeps an eye on a plant. An ESP32 microcontroller reads the plant's sensors and " +
-        "reports the readings over Wi-Fi, so they can be processed and stored away from the device.",
-      highlights: [
-        "Wrote the ESP32 firmware in C to collect readings from the plant sensors.",
-        "Sent the readings over Wi-Fi to be processed and stored.",
-        "Validated the telemetry so that what is stored matches what the sensors measured.",
-        "Documented the system.",
+        "A modular IoT platform that looks after indoor plants on its own. Sensors in a foil-lined grow box report " +
+        "soil moisture, light, temperature and water level; the system waters, lights, heats and ventilates the plants " +
+        "to match, keeps a camera on them, and once a week asks a large language model to read the data and photos " +
+        "and suggest how to care for them. Built by a team of four for a UWA IoT unit.",
+      sections: [
+        {
+          title: "What I did",
+          items: [
+            "Top contributor to the repository (26 commits).",
+            "Built the LLM analysis: a Flask backend that pulls seven days of sensor readings and photos from the database and asks OpenAI GPT-4o for a structured plant health report and care suggestions.",
+            "Designed and built the web pages: plant dashboard, plant setup, plant details (with a low-water warning) and the analysis page with loading states and environmental trends.",
+            "Wrote the ESP32 camera firmware for periodic photos and the live video stream.",
+          ],
+        },
+        {
+          title: "How it works",
+          items: [
+            "Watering: a capacitive soil moisture sensor and a float switch drive a pump through relays, automatically below a set threshold or by hand.",
+            "Light: a BH1750 light sensor adjusts the LED grow lights.",
+            "Temperature: a BME280 switches a fan or a heating pad.",
+            "Camera: the XIAO ESP32S3 Sense takes periodic photos and streams live video.",
+            "Data: sensor readings go over MQTT (Mosquitto) to the Flask backend and into SQLite; photos are uploaded over HTTP.",
+            "Dashboard: live charts (Chart.js), thresholds, manual override and the weekly GPT-4o report.",
+          ],
+        },
       ],
+      stack: [
+        { group: "Hardware", items: ["XIAO ESP32S3 Sense", "BME280", "BH1750", "Soil moisture sensor", "Relays & pump"] },
+        { group: "Firmware", items: ["C/C++", "Arduino", "AsyncMQTTClient", "ArduinoJson"] },
+        { group: "Backend", items: ["Python", "Flask", "Mosquitto MQTT", "SQLite", "Socket.IO"] },
+        { group: "Frontend", items: ["HTML/CSS/JS", "Chart.js"] },
+        { group: "AI", items: ["OpenAI GPT-4o"] },
+      ],
+      links: [{ label: "GitHub repository", href: "https://github.com/Cynthiachen2023/Smart-plant-care-system" }],
     },
   },
 ];
