@@ -41,13 +41,13 @@ export function DetailsHint({ text, className }: { text: string; className?: str
   }, [text]);
 
   const icon = (
-    <RotateCw aria-hidden className="size-3.5 shrink-0 transition-transform duration-500 group-hover:rotate-180" />
+    <RotateCw aria-hidden className="size-3.5 shrink-0 transition-transform duration-(--dur-4) ease-move group-hover:rotate-180" />
   );
   const hint = (
     <span
       aria-hidden
       className={cn(
-        "flex items-center gap-1 font-mono text-xs text-muted-foreground transition-colors group-hover:text-foreground",
+        "flex items-center gap-1 font-mono text-xs text-muted-foreground transition-colors duration-(--dur-1) group-hover:text-foreground",
         // h: one line of the description (text-sm, leading-relaxed), so the hint sits on it.
         fit === "below" ? "mt-1 justify-end" : "absolute right-0 bottom-0 h-[1.422rem]",
       )}

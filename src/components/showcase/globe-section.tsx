@@ -1,13 +1,20 @@
+import type { CSSProperties } from "react";
 import { MatrixGlobe } from "./matrix-globe";
+import { Reveal } from "./reveal";
+import { SectionHeader } from "./section";
 
-// No card wrapper: the globe floats directly on the page background.
+// Servers: the same rule and "$ command" header as the other sections, then the globe
+// floating on the page background (no card), centred. It scrolls in like the rest: the
+// header rises, then the globe grows in from 92 % (`.reveal-scale`).
 export function GlobeSection() {
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold tracking-tight">Servers</h2>
-      <div className="flex justify-center">
-        <MatrixGlobe />
-      </div>
-    </section>
+    <Reveal>
+      <section id="servers" aria-labelledby="servers-title" className="scroll-mt-8 border-t pt-8 md:pt-10">
+        <SectionHeader id="servers" command="ls servers/" title="Servers" />
+        <div className="reveal reveal-scale mt-6 flex justify-center md:mt-8" style={{ "--i": 1.5 } as CSSProperties}>
+          <MatrixGlobe />
+        </div>
+      </section>
+    </Reveal>
   );
 }

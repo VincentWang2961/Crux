@@ -57,7 +57,7 @@ export function PostToc({ items, title = "contents" }: { items: TocItem[]; title
           <span
             aria-hidden
             style={{ transform: `translateY(${bar.top}px)`, height: bar.height }}
-            className="absolute top-0 -left-px w-px bg-foreground transition-[transform,height] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none"
+            className="absolute top-0 -left-px w-px bg-foreground transition-[transform,height] duration-(--dur-3) ease-move motion-reduce:transition-none"
           />
         )}
         {items.map((item) => (
@@ -67,7 +67,7 @@ export function PostToc({ items, title = "contents" }: { items: TocItem[]; title
               data-id={item.id}
               aria-current={active === item.id ? "location" : undefined}
               className={cn(
-                "block py-1.5 leading-snug transition-colors duration-200 hover:text-foreground",
+                "block py-1.5 leading-snug transition-colors duration-(--dur-1) hover:text-foreground",
                 item.depth === 3 ? "pl-6" : "pl-3",
                 active === item.id ? "text-foreground" : "text-muted-foreground",
               )}

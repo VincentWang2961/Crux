@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { flushSync } from "react-dom";
 import { X } from "lucide-react";
+import { DUR, EASE, prefersReducedMotion } from "@/lib/motion";
 
 // Click-to-enlarge for images inside a post (the Markdown body is plain HTML, so this
 // attaches to it by id). Same approach as the home page photo lightbox:
@@ -13,14 +14,13 @@ import { X } from "lucide-react";
 //   there's no flash;
 // - Esc, the close button or a click anywhere closes it; reduced motion = instant.
 
-const OPEN_MS = 420;
-const CLOSE_MS = 320;
-const EASE = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+const OPEN_MS = DUR[4];
+const CLOSE_MS = DUR[3];
 const RADIUS_PX = 10; // matches .post-prose img (0.6em at 17px)
 
 type Shown = { src: string; alt: string; caption: string; ratio: number };
 
-const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reduced = prefersReducedMotion;
 
 export function PostImageZoom({ targetId }: { targetId: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -61,11 +61,11 @@ export function PostImageZoom({ targetId }: { targetId: string }) {
     if (!from || reduced()) return;
     frame.current!.animate([from, { transform: "none", borderRadius: `${RADIUS_PX}px` }], {
       duration: OPEN_MS,
-      easing: EASE,
+      easing: EASE.enter,
     });
-    d.animate({ opacity: [0, 1] }, { duration: OPEN_MS, easing: EASE, pseudoElement: "::backdrop" });
+    d.animate({ opacity: [0, 1] }, { duration: OPEN_MS, easing: EASE.move, pseudoElement: "::backdrop" });
     d.querySelectorAll("[data-zoom-chrome]").forEach((el) =>
-      el.animate({ opacity: [0, 1] }, { duration: 240, delay: OPEN_MS * 0.6, fill: "backwards" }),
+      el.animate({ opacity: [0, 1] }, { duration: DUR[2], delay: OPEN_MS * 0.5, easing: EASE.enter, fill: "backwards" }),
     );
   }
 
@@ -77,12 +77,12 @@ export function PostImageZoom({ targetId }: { targetId: string }) {
     if (to && !reduced()) {
       const fly = frame.current!.animate([{ transform: "none", borderRadius: `${RADIUS_PX}px` }, to], {
         duration: CLOSE_MS,
-        easing: EASE,
+        easing: EASE.swap,
         fill: "forwards",
       });
-      d.animate({ opacity: [1, 0] }, { duration: CLOSE_MS, easing: EASE, fill: "forwards", pseudoElement: "::backdrop" });
+      d.animate({ opacity: [1, 0] }, { duration: CLOSE_MS, easing: EASE.exit, fill: "forwards", pseudoElement: "::backdrop" });
       d.querySelectorAll("[data-zoom-chrome]").forEach((el) =>
-        el.animate({ opacity: [1, 0] }, { duration: 140, fill: "forwards" }),
+        el.animate({ opacity: [1, 0] }, { duration: DUR[1], easing: EASE.exit, fill: "forwards" }),
       );
       await fly.finished.catch(() => {});
     }

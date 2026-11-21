@@ -4,6 +4,28 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Motion tokens: every animation uses these curves and durations (mirrored in
+ * src/lib/motion.ts for the Web Animations code; keep both identical). `ease-enter` etc.
+ * are also Tailwind utilities.
+ * - enter: arriving or settling (expo-out); move: changing place or size (emphasised
+ *   decelerate); exit: leaving (accelerate); swap: turning into another state in place.
+ * - dur-1 150 ms feedback · dur-2 240 ms small UI · dur-3 420 ms panels and images ·
+ *   dur-4 560 ms large surfaces and the whole page.
+ */
+@theme static {
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-move: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-swap: cubic-bezier(0.65, 0, 0.35, 1);
+}
+:root {
+  --dur-1: 150ms;
+  --dur-2: 240ms;
+  --dur-3: 420ms;
+  --dur-4: 560ms;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -178,17 +200,17 @@ html.theme-switching::view-transition-new(root) {
  * - .post-enter: the post body rises in after the title lands.
  */
 ::view-transition-group(root) {
-  animation-duration: 220ms;
+  animation-duration: var(--dur-2);
 }
 ::view-transition-group(.post-morph) {
-  animation-duration: 420ms;
-  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-duration: var(--dur-3);
+  animation-timing-function: var(--ease-move);
 }
 ::view-transition-image-pair(.post-morph) {
   animation-name: vt-soften;
 }
 ::view-transition-new(.post-enter) {
-  animation: vt-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
+  animation: vt-rise var(--dur-4) var(--ease-enter) 120ms both;
 }
 @keyframes vt-soften {
   40% {
@@ -248,7 +270,7 @@ html.theme-switching::view-transition-new(root) {
     color: var(--muted-foreground);
     opacity: 0;
     text-decoration: none;
-    transition: opacity 150ms;
+    transition: opacity var(--dur-1);
   }
   .post-prose h2:hover .heading-anchor,
   .post-prose h3:hover .heading-anchor {
@@ -259,7 +281,7 @@ html.theme-switching::view-transition-new(root) {
     text-decoration: underline;
     text-decoration-color: color-mix(in oklch, var(--foreground) 35%, transparent);
     text-underline-offset: 0.2em;
-    transition: text-decoration-color 150ms;
+    transition: text-decoration-color var(--dur-1);
   }
   .post-prose a:hover {
     text-decoration-color: var(--foreground);
@@ -370,7 +392,7 @@ html.theme-switching::view-transition-new(root) {
   /* Post images open in a lightbox (post-image-zoom.tsx). */
   .post-prose img.zoomable {
     cursor: zoom-in;
-    transition: opacity 150ms;
+    transition: opacity var(--dur-1);
   }
   .post-prose img.zoomable:hover {
     opacity: 0.92;
@@ -419,12 +441,12 @@ html.theme-switching::view-transition-new(root) {
     animation: name-shake 0.32s ease-in-out;
   }
   .hero-rise {
-    animation: hero-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s) both;
+    animation: hero-rise var(--dur-4) var(--ease-enter) var(--d, 0s) both;
   }
   .hero-char {
     display: inline-block;
     white-space: pre;
-    animation: hero-char 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s) both;
+    animation: hero-char 0.2s var(--ease-enter) var(--d, 0s) both;
   }
   /* The caret appears when typing ends, then blinks. */
   .hero-caret {
@@ -465,48 +487,62 @@ html.theme-switching::view-transition-new(root) {
 }
 
 /*
- * Scroll-in reveal (reveal.tsx). Inside an armed <Reveal>, each `.reveal` waits below its
- * place, faded and soft; when the block reaches the viewport it rises in on an
- * expo-out curve (fast start, long gentle settle), staggered by `--i` × 70 ms.
- * `.reveal-photo` also grows from 94 %, and its `.reveal-zoom` image settles from 112 %,
- * like a print being laid down. `.reveal-logo` (Experience) pops in from 60 % and -10°.
+ * Scroll-in reveal (reveal.tsx). Each `.reveal` that starts below the fold waits ("wait")
+ * below its place, faded and soft, then rises in on the enter curve when it reaches the
+ * viewport, after its batch delay (`--reveal-delay`, set by reveal.tsx).
+ * - `.reveal-photo` also grows from 94 %, and its `.reveal-zoom` image settles from 112 %,
+ *   like a print being laid down.
+ * - `.reveal-logo` (Experience, Education) pops in a beat later, from 60 % and -10°.
+ * - `.reveal-scale` (the globe) grows from 92 % instead of rising.
+ * Phones travel less and blur less: shorter distances read better on a small screen, and
+ * blur is the costliest part to paint.
  */
 :root {
-  --reveal-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --reveal-rise: 1rem;
+  --reveal-blur: 3px;
 }
-[data-reveal="armed"] .reveal {
+@media (min-width: 40rem) {
+  :root {
+    --reveal-rise: 1.5rem;
+    --reveal-blur: 6px;
+  }
+}
+.reveal[data-reveal-item="wait"] {
   opacity: 0;
-  translate: 0 1.75rem;
-  filter: blur(6px);
+  translate: 0 var(--reveal-rise);
+  filter: blur(var(--reveal-blur));
 }
-[data-reveal="armed"] .reveal-photo {
-  translate: 0 2.5rem;
+.reveal-photo[data-reveal-item="wait"] {
+  translate: 0 calc(var(--reveal-rise) * 1.5);
   scale: 0.94;
 }
-[data-reveal="armed"] .reveal-zoom {
+.reveal-scale[data-reveal-item="wait"] {
+  translate: none;
+  scale: 0.92;
+}
+[data-reveal-item="wait"] .reveal-zoom {
   scale: 1.12;
 }
-[data-reveal="shown"] .reveal {
-  transition:
-    opacity 0.9s var(--reveal-ease),
-    translate 1.1s var(--reveal-ease),
-    scale 1.3s var(--reveal-ease),
-    filter 0.9s var(--reveal-ease);
-  transition-delay: calc(var(--i, 0) * 70ms);
-}
-[data-reveal="shown"] .reveal-zoom {
-  transition: scale 1.6s var(--reveal-ease) 0.1s;
-}
-/* Experience logos: the tile pops in a beat after its entry, turning upright from -10°. */
-[data-reveal="armed"] .reveal-logo {
+[data-reveal-item="wait"] .reveal-logo {
   scale: 0.6;
   rotate: -10deg;
 }
-[data-reveal="shown"] .reveal-logo {
+.reveal[data-reveal-item="shown"] {
   transition:
-    scale 1.2s var(--reveal-ease),
-    rotate 1.2s var(--reveal-ease);
-  transition-delay: calc(var(--i, 0) * 70ms + 140ms);
+    opacity 0.8s var(--ease-enter),
+    translate 1s var(--ease-enter),
+    scale 1.2s var(--ease-enter),
+    filter 0.8s var(--ease-enter);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+[data-reveal-item="shown"] .reveal-zoom {
+  transition: scale 1.6s var(--ease-enter) calc(var(--reveal-delay, 0ms) + 100ms);
+}
+[data-reveal-item="shown"] .reveal-logo {
+  transition:
+    scale 1.1s var(--ease-enter),
+    rotate 1.1s var(--ease-enter);
+  transition-delay: calc(var(--reveal-delay, 0ms) + 140ms);
 }
 
 /* Uptime lights on project cards (uptime-dots.tsx).

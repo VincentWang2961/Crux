@@ -14,6 +14,7 @@ import type {
   AvailabilityWindow,
 } from "@/lib/availability";
 import { cn } from "@/lib/utils";
+import { DUR } from "@/lib/motion";
 
 // Status pill in the hero bar: the answer first ("Unavailable · free 19:00"), the detail
 // on demand. Clicking it unfolds a panel with the coming week (today through the same weekday next week) as free/busy timeline
@@ -27,7 +28,7 @@ const STATUS: Record<AvailabilityStatus, { label: string; fill: string }> = {
 };
 
 // Panel open / close: clip-path reveal from the pill's corner, then rows fade in.
-const OPEN_MS = 380;
+const OPEN_MS = DUR[3];
 const ROW_STAGGER_MS = 22;
 
 type Segment = { start: string; end: string; status: AvailabilityStatus; note?: string };
@@ -160,7 +161,7 @@ export function AvailabilityPill({ data }: { data: AvailabilityWindow }) {
               <li
                 key={date}
                 style={{ "--row-delay": `${(day + 1) * ROW_STAGGER_MS}ms` } as CSSProperties}
-                className="grid -translate-y-0.5 grid-cols-[3.25rem_minmax(0,1fr)] items-center opacity-0 transition-[opacity,translate] delay-(--row-delay) duration-300 ease-out group-data-open:translate-y-0 group-data-open:opacity-100 motion-reduce:transition-none"
+                className="grid -translate-y-0.5 grid-cols-[3.25rem_minmax(0,1fr)] items-center opacity-0 transition-[opacity,translate] delay-(--row-delay) duration-(--dur-3) ease-enter group-data-open:translate-y-0 group-data-open:opacity-100 motion-reduce:transition-none"
               >
                 <span
                   aria-hidden
@@ -193,7 +194,7 @@ export function AvailabilityPill({ data }: { data: AvailabilityWindow }) {
                       >
                         <span
                           className={cn(
-                            "block h-2 w-full transition-[height] duration-150 group-first/seg:rounded-l-full group-last/seg:rounded-r-full group-hover/seg:h-3 group-focus-visible/seg:h-3 group-focus-visible/seg:ring-2 group-focus-visible/seg:ring-foreground forced-colors:border",
+                            "block h-2 w-full transition-[height] duration-(--dur-1) ease-move group-first/seg:rounded-l-full group-last/seg:rounded-r-full group-hover/seg:h-3 group-focus-visible/seg:h-3 group-focus-visible/seg:ring-2 group-focus-visible/seg:ring-foreground forced-colors:border",
                             STATUS[s.status].fill,
                             isPast && "opacity-35",
                             isStop && "h-3",
@@ -257,7 +258,7 @@ export function AvailabilityPill({ data }: { data: AvailabilityWindow }) {
         className={cn(
           "group absolute top-full right-0 left-0 z-40 mt-2 origin-top-right sm:left-auto sm:w-[26rem] rounded-2xl border bg-popover p-4 text-popover-foreground shadow-2xl shadow-black/10",
           "invisible scale-[0.97] opacity-0 [clip-path:inset(0_0_88%_55%_round_1rem)]",
-          "transition-[clip-path,opacity,scale,visibility] duration-(--open) ease-[cubic-bezier(0.2,0.9,0.1,1)]",
+          "transition-[clip-path,opacity,scale,visibility] duration-(--open) ease-move",
           "data-open:visible data-open:scale-100 data-open:opacity-100 data-open:[clip-path:inset(0_round_1rem)]",
           "motion-reduce:transition-none",
         )}

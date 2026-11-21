@@ -29,7 +29,7 @@ export function PostList({ posts }: { posts: PostMeta[] }) {
                 </ViewTransition>
                 <ArrowRight
                   aria-hidden
-                  className="mt-1 size-4 shrink-0 -translate-x-1 text-muted-foreground opacity-0 transition-[opacity,translate] duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none"
+                  className="mt-1 size-4 shrink-0 -translate-x-1 text-muted-foreground opacity-0 transition-[opacity,translate] duration-(--dur-2) ease-enter group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transition-none"
                 />
               </span>
               {post.summary && (

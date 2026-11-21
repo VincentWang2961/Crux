@@ -98,7 +98,7 @@ export function PortraitCard({ portrait }: { portrait: Portrait }) {
           aria-label={flipped ? "Show the photo" : "Show where this photo was taken"}
           onClick={() => setFlipped((f) => !f)}
           style={{ transform: `rotateY(${flipped ? 180 : 0}deg)` }}
-          className="grid w-full cursor-pointer rounded-[3px] text-left transition-transform duration-700 ease-[cubic-bezier(0.65,0,0.35,1)] transform-3d outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background motion-reduce:transition-none"
+          className="grid w-full cursor-pointer rounded-[3px] text-left transition-transform duration-700 ease-swap transform-3d outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background motion-reduce:transition-none"
         >
           {/* Front: the photo, with a glare that follows the pointer. */}
           <span aria-hidden={flipped} className={face}>

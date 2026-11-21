@@ -135,7 +135,7 @@ export function About() {
                       {external && (
                         <ArrowUpRight
                           aria-hidden
-                          className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-px group-hover:translate-x-px"
+                          className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-(--dur-2) ease-move group-hover:-translate-y-px group-hover:translate-x-px"
                         />
                       )}
                     </a>
@@ -176,17 +176,18 @@ export function Experience() {
 
 export function Projects() {
   return (
+    <Reveal>
     <Section id="projects" command="ls projects/" title="Projects">
       <div className="grid gap-4 sm:grid-cols-2">
-        {projects.map((p) => {
+        {projects.map((p, n) => {
           const card = (
-            <Card className="h-full transition-colors group-hover:bg-muted/50">
+            <Card className="h-full transition-colors duration-(--dur-1) ease-move group-hover:bg-muted/50">
               <CardHeader>
                 <div className="flex items-baseline justify-between gap-3">
                   <CardTitle className="flex items-center gap-1">
                     {p.name}
                     {p.href && !p.details && (
-                      <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:-translate-y-px group-hover:translate-x-px" />
+                      <ArrowUpRight className="size-4 text-muted-foreground transition-transform duration-(--dur-2) ease-move group-hover:-translate-y-px group-hover:translate-x-px" />
                     )}
                   </CardTitle>
                   <span className={period}>{p.period}</span>
@@ -211,19 +212,28 @@ export function Projects() {
               </CardFooter>
             </Card>
           );
+          // Cards side by side arrive together and are staggered left to right.
+          const style = at(1 + n);
           if (p.details) {
-            return <ProjectFlip key={p.name} title={p.name} front={card} back={<ProjectDetails project={p} />} />;
+            return (
+              <div key={p.name} className="reveal" style={style}>
+                <ProjectFlip title={p.name} front={card} back={<ProjectDetails project={p} />} />
+              </div>
+            );
           }
           return p.href ? (
-            <a key={p.name} href={p.href} target="_blank" rel="noreferrer" className="group">
+            <a key={p.name} href={p.href} target="_blank" rel="noreferrer" className="group reveal" style={style}>
               {card}
             </a>
           ) : (
-            <div key={p.name}>{card}</div>
+            <div key={p.name} className="reveal" style={style}>
+              {card}
+            </div>
           );
         })}
       </div>
     </Section>
+    </Reveal>
   );
 }
 
@@ -341,10 +351,11 @@ function ProjectDetails({ project: p }: { project: (typeof projects)[number] }) 
 
 export function Skills() {
   return (
+    <Reveal>
     <Section id="skills" command="cat skills.md" title="Skills">
       <dl className="flex flex-col gap-4">
-        {skillGroups.map((g) => (
-          <div key={g.area} className="grid gap-2 sm:grid-cols-[10rem_1fr] sm:gap-4">
+        {skillGroups.map((g, n) => (
+          <div key={g.area} className="reveal grid gap-2 sm:grid-cols-[10rem_1fr] sm:gap-4" style={at(1 + n * 0.75)}>
             <dt className="text-sm text-muted-foreground sm:pt-0.5">{g.area}</dt>
             <dd className="flex flex-wrap gap-1.5">
               {g.items.map((item) => (
@@ -357,6 +368,7 @@ export function Skills() {
         ))}
       </dl>
     </Section>
+    </Reveal>
   );
 }
 
@@ -383,12 +395,14 @@ export function Education() {
 
 export function Certifications() {
   return (
+    <Reveal>
     <Section id="certifications" command="ls certifications/" title="Certifications">
       <ul className="flex flex-col divide-y">
-        {certifications.map((c) => (
+        {certifications.map((c, n) => (
           <li
             key={c.name}
-            className="flex flex-col gap-x-4 gap-y-0.5 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-baseline sm:justify-between"
+            style={at(1 + n * 0.75)}
+            className="reveal flex flex-col gap-x-4 gap-y-0.5 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-baseline sm:justify-between"
           >
             <div>
               <p className="text-sm">{c.name}</p>
@@ -399,5 +413,6 @@ export function Certifications() {
         ))}
       </ul>
     </Section>
+    </Reveal>
   );
 }

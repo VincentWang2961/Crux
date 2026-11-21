@@ -107,7 +107,7 @@ export function ProjectPager({ pages }: { pages: Page[] }) {
                 aria-label={`Go to ${p.label}`}
                 aria-current={i === index ? "page" : undefined}
                 className={cn(
-                  "h-1.5 rounded-full transition-all duration-300",
+                  "h-1.5 rounded-full transition-[width,background-color] duration-(--dur-2) ease-move motion-reduce:transition-none",
                   i === index ? "w-5 bg-foreground" : "w-1.5 bg-foreground/25 hover:bg-foreground/50",
                 )}
               />

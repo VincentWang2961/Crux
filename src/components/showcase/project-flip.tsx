@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type MouseEvent, type ReactNode, type SyntheticEvent } from "react";
 import { X } from "lucide-react";
+import { DUR, EASE, prefersReducedMotion } from "@/lib/motion";
 
 // A project card that opens into its details: a "container transform".
 // - Clicking the card (or Enter / Space on its button) opens a native modal <dialog>. One box,
@@ -17,10 +18,8 @@ import { X } from "lucide-react";
 // `front` is the card exactly as the grid shows it; `back` is the details (one page, or a
 // ProjectPager). Both are server-rendered; only the motion lives here.
 
-const OPEN_MS = 560;
-const CLOSE_MS = 420;
-const EASE_OUT = "cubic-bezier(0.2, 0, 0, 1)"; // emphasised decelerate: quick start, long settle
-const EASE_IN_OUT = "cubic-bezier(0.4, 0, 0.2, 1)";
+const OPEN_MS = DUR[4];
+const CLOSE_MS = DUR[3];
 const PANEL_MAX_W = 820; // px
 const PANEL_MAX_H = 640; // px
 const GUTTER = 16; // px, minimum space around the panel
@@ -41,7 +40,7 @@ export function ProjectFlip({ title, front, back }: Props) {
   const running = useRef<Animation[]>([]);
   const closing = useRef(false);
 
-  const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduced = prefersReducedMotion;
 
   // Cancel every animation this component started, the backdrop's included. A finished
   // animation with `fill: "forwards"` keeps applying its last frame until cancelled: left on
@@ -92,15 +91,16 @@ export function ProjectFlip({ title, front, back }: Props) {
     Object.assign(p.style, box(to));
     s.style.visibility = "hidden";
     if (reduced()) return;
-    const opts = { duration: OPEN_MS, easing: EASE_OUT, fill: "both" as const };
+    const opts = { duration: OPEN_MS, easing: EASE.move, fill: "both" as const };
     play(p, [box(from), box(to)], opts);
     play(frontLayer.current!, [{ opacity: 1 }, { opacity: 0 }], { ...opts, duration: OPEN_MS * 0.3, easing: "linear" });
     play(backLayer.current!, [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], {
       ...opts,
       duration: OPEN_MS * 0.65,
       delay: OPEN_MS * 0.3,
+      easing: EASE.enter,
     });
-    play(d, [{ opacity: 0 }, { opacity: 1 }], { duration: OPEN_MS, easing: "ease-out", pseudoElement: "::backdrop" });
+    play(d, [{ opacity: 0 }, { opacity: 1 }], { duration: OPEN_MS, easing: EASE.move, pseudoElement: "::backdrop" });
   };
 
   const close = () => {
@@ -121,11 +121,11 @@ export function ProjectFlip({ title, front, back }: Props) {
     stop();
     const at = p.getBoundingClientRect();
     const to = s.getBoundingClientRect();
-    const opts = { duration: CLOSE_MS, easing: EASE_IN_OUT, fill: "both" as const };
+    const opts = { duration: CLOSE_MS, easing: EASE.swap, fill: "both" as const };
     const shrink = play(p, [box(at), box(to)], opts);
     play(backLayer.current!, [{ opacity: 1 }, { opacity: 0 }], { ...opts, duration: CLOSE_MS * 0.35, easing: "linear" });
     play(frontLayer.current!, [{ opacity: 0 }, { opacity: 1 }], { ...opts, duration: CLOSE_MS * 0.45, delay: CLOSE_MS * 0.55 });
-    play(d, [{ opacity: 1 }, { opacity: 0 }], { ...opts, easing: "ease-in", pseudoElement: "::backdrop" });
+    play(d, [{ opacity: 1 }, { opacity: 0 }], { ...opts, easing: EASE.exit, pseudoElement: "::backdrop" });
     shrink.onfinish = finish;
   };
 

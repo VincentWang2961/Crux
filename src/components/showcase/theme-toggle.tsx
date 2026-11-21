@@ -4,6 +4,7 @@ import type { MouseEvent } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DUR, EASE, prefersReducedMotion } from "@/lib/motion";
 
 declare global {
   interface Window {
@@ -12,8 +13,8 @@ declare global {
 }
 
 // Length and easing of the circular reveal (see the ::view-transition rules in globals.css).
-const REVEAL_MS = 650;
-const REVEAL_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+const REVEAL_MS = DUR[4] + 80; // the circle crosses the whole screen: a touch longer
+const REVEAL_EASE = EASE.swap;
 
 // Stateless toggle: icons switch via the `dark` class, so no hydration mismatch.
 // The default theme follows the OS (see the theme script in app/layout.tsx). Clicking
@@ -38,7 +39,7 @@ function switchTheme() {
 // the theme switches instantly.
 export function ThemeToggle({ className }: { className?: string }) {
   function toggle(e: MouseEvent<HTMLButtonElement>) {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     if (!document.startViewTransition || reduce) return switchTheme();
 
     const r = e.currentTarget.getBoundingClientRect();

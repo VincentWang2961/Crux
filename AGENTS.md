@@ -106,7 +106,7 @@ Responsive design is **mobile-first, not just scaled down**:
 - **`sm` and up:** the content block is vertically centred and the roles sit on one row.
 - **Heading:** its size is fluid, `clamp(2rem, 10vw, 4.5rem)`, so the name fills a phone's width without wrapping.
 
-Intro animation: pure CSS, no JS, and the whole sequence finishes in under 2 s. The `T` timeline at the top of `hero.tsx` sets each element's start time through the `--d` CSS variable. The prompt and heading type in character by character (`.hero-char`). The roles, the intro and the scroll hint fade and rise into place (`.hero-rise`). The caret appears when typing ends and then blinks (`.hero-caret`). The keyframes live in `globals.css`. All of it is turned off under `prefers-reduced-motion`. The name stays editable after the intro; it is the hidden way into `/admin` (see Availability → Admin page).
+Intro animation: pure CSS, no JS, and the whole sequence finishes in about 2 s. The `T` timeline at the top of `hero.tsx` sets each element's start time through the `--d` CSS variable. The prompt and heading type in character by character (`.hero-char`). The roles, the intro and the scroll hint fade and rise into place (`.hero-rise`). The caret appears when typing ends and then blinks (`.hero-caret`). The keyframes live in `globals.css`. All of it is turned off under `prefers-reduced-motion`. The name stays editable after the intro; it is the hidden way into `/admin` (see Availability → Admin page).
 
 ## CV sections (middle of the home page)
 
@@ -139,12 +139,8 @@ Section bodies are separated by top borders.
     The button has `aria-pressed` and a label that says what it will do. A small ↻ badge on the photo
     hints that it turns. Reduced motion flips instantly.
   - While `portrait` is `null`, a "VW" monogram placeholder is shown.
-- **Scroll-in:** the section is wrapped in `<Reveal>` (`reveal.tsx`). Every `.reveal` inside it rises,
-  fades and un-blurs on an expo-out curve the first time the section enters the viewport, staggered by
-  `--i` × 70 ms. The photo also grows from 94 % and its image settles from 112 %.
-  - Server HTML is fully visible; the block is only hidden ("armed") on the client when it starts below
-    the fold. No JS or reduced motion means no animation.
-  - `Section` headers carry `.reveal`, so wrapping any other section in `<Reveal>` animates it the same way.
+- **Scroll-in:** the section is wrapped in `<Reveal>`, like every section (see Motion). The photo also
+  grows from 94 % and its image settles from 112 %.
 - **Hero hand-off:** the hero's content block has `.hero-exit`, a scroll-driven animation
   (`animation-timeline: scroll(root)`, over the first 70 svh) that eases it up, shrinks it to 96 % and
   fades it out as About comes in. It is skipped where scroll timelines are unsupported.
@@ -182,8 +178,8 @@ optional `note` line and **one short `summary` paragraph** (no bullet lists).
   - **Adding an organisation:** put its file in `public/logos/`, add its key to `OrgLogoKey` in
     `site-data.ts`, and run `python3 scripts/measure-logos.py --trim`. This needs `rsvg-convert` and
     Pillow.
-- **Scroll-in:** the section is wrapped in `<Reveal>`, like About. The header rises first, then each
-  entry rises, fades and un-blurs in turn (`--i` steps of 1.5, about 105 ms apart). Its logo pops
+- **Scroll-in:** the section is wrapped in `<Reveal>` (see Motion). Entries that arrive together are
+  `--i` steps of 1.5 apart (about 105 ms); on a phone each entry comes in as it is reached. Its logo pops
   in a beat later, growing from 60 % and turning upright from -10° (`.reveal-logo` in `globals.css`).
   Reduced motion shows everything at once.
 
@@ -251,13 +247,13 @@ description, in the space the last line leaves free.
 
 **Motion** (`project-flip.tsx`, a "container transform" with the Web Animations API; no 3D):
 - One box, with the card's surface, border and corners, grows from the card's place in the grid
-  to the panel. Its `left`, `top`, `width` and `height` animate over `OPEN_MS` (560 ms), on an
-  emphasised-decelerate curve. The page behind blurs in through `::backdrop`.
+  to the panel. Its `left`, `top`, `width` and `height` animate over `OPEN_MS` (`DUR[4]`, 560 ms), on the
+  `move` curve. The page behind blurs in through `::backdrop`.
 - **Nothing inside reflows.** The card's content keeps the card's exact size and the details keep
   the panel's exact size, both pinned to the box's centre and clipped by it.
   - The card's content fades out in the first 30 %.
   - The details fade in and rise 10 px over the rest.
-- Closing runs it backwards over `CLOSE_MS` (420 ms): the details fade out first, and the card's
+- Closing runs it backwards over `CLOSE_MS` (`DUR[3]`, 420 ms) on the `swap` curve: the details fade out first, and the card's
   content fades back in at the end.
 - The card in the grid is hidden while its twin is out. Reduced motion opens and closes instantly.
 - **Backdrop:** every animation started is kept in `running` and cancelled by `stop()`. A finished
@@ -327,6 +323,40 @@ the group has a full spoken label.
   Projects stays static. No key or no data → nothing is rendered.
 - Needs `UPTIMEROBOT_API_KEY` (see Environment variables). To add lights to another card, give it
   `uptime: { monitor, subject }`; nothing else changes.
+
+## Motion (whole site)
+
+Every animation draws on one set of tokens, so the site moves as one thing. The photo spread and
+its lightbox keep their own tuned values for now.
+
+| Token | Value | Used for |
+| --- | --- | --- |
+| `enter` | `cubic-bezier(0.16, 1, 0.3, 1)` (expo-out) | something arriving or settling: scroll-in, hero intro, lightbox open, details content |
+| `move` | `cubic-bezier(0.2, 0, 0, 1)` (emphasised decelerate) | something on screen changing place or size: the project panel, the availability panel, indicators |
+| `exit` | `cubic-bezier(0.4, 0, 1, 1)` (accelerate) | something leaving: backdrops and chrome fading out |
+| `swap` | `cubic-bezier(0.65, 0, 0.35, 1)` (symmetric) | one state turning into another in place: closing back into a slot, the portrait flip, the theme circle |
+| `dur-1` / `2` / `3` / `4` | 150 / 240 / 420 / 560 ms | feedback · small UI · panels and images · large surfaces and the whole page |
+
+- **Where they live:** CSS in `globals.css` (`--ease-*` in `@theme static`, so `ease-enter` etc.
+  are Tailwind utilities; `--dur-*` on `:root`, used as `duration-(--dur-2)`). JS in
+  `src/lib/motion.ts` (`EASE`, `DUR`, `prefersReducedMotion()`). Keep the two lists identical.
+- **Rules of thumb:** opening uses one step longer than closing (`dur-4` open, `dur-3` close).
+  Colour and hover feedback uses `dur-1`. Don't add one-off curves; pick the token whose meaning fits.
+- **Scroll-in** (`reveal.tsx` + `.reveal` in `globals.css`): every section from About to Servers
+  is wrapped in `<Reveal>`. `Section` headers carry `.reveal`, and so do the items inside (paragraphs,
+  entries, cards, skill rows, certifications, the globe).
+  - Each `.reveal` that starts below the fold waits ("wait": faded, lowered, blurred) and rises in
+    on `enter` the first time *it* reaches the viewport. On a phone a long section therefore comes
+    in piece by piece as you scroll; on a wide screen, items that arrive together (cards side by
+    side) are staggered by their `--i` order, relative to the first of the batch, 70 ms per step and
+    at most 480 ms.
+  - Phones rise 1 rem with a 3 px blur; from `sm` up, 1.5 rem and 6 px. Blur is the costliest part.
+  - Items carried past the screen by a fling or an anchor jump are shown at once.
+  - Server HTML is fully visible, items already on screen at load never hide, and reduced motion
+    never hides anything.
+  - Variants: `.reveal-photo` / `.reveal-zoom` (portrait), `.reveal-logo` (Experience, Education),
+    `.reveal-scale` (the globe).
+- **Reduced motion:** every animation is off or instant.
 
 ## Site bar (every page)
 
@@ -706,7 +736,7 @@ Purpose: shows where the maintainer's servers are deployed. Lives at the bottom 
 | File | Role |
 | --- | --- |
 | `src/components/showcase/matrix-globe.tsx` | Client component, Canvas 2D renderer (no three.js). Style reference: cloudflare.com "Region: Earth" globe, monochrome. Dense land-only dots on a Fibonacci sphere lattice (uniform, no pole artefacts), rim-darkening, drag/inertia/auto-rotate, node badges, labels. Tunables are constants at the top. |
-| `src/components/showcase/globe-section.tsx` | Section wrapper (title only, no card — the globe floats on the page). |
+| `src/components/showcase/globe-section.tsx` | Section wrapper: the shared rule and `$ ls servers/` header (`SectionHeader`), then the globe floating on the page (no card). It scrolls in like the other sections; the globe grows in from 92 % (`.reveal-scale`). |
 | `src/lib/site-data.ts` → `SERVER_NODES` | Node list: `id`, `name`, `lat`, `lon`, `label` quadrant (`ne/nw/se/sw`) to keep name tags from overlapping. |
 | `src/lib/land-mask.ts` | Generated 0.5° land/ocean bitmap (Natural Earth 50m, scanline-rasterised); each dot samples its centre against it. Regenerate with `scripts/gen-land-mask.mjs`; never edit by hand. |
 
