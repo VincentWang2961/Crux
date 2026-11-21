@@ -150,6 +150,17 @@ optional `note` line and **one short `summary` paragraph** (no bullet lists).
   in a beat later, growing from 60 % and turning upright from -10° (`.reveal-logo` in `globals.css`).
   Reduced motion shows everything at once.
 
+### Education
+
+Built the same way as Experience: each entry (`education` in `site-data.ts`) has a `detail` line
+(specialisation, result) and **one short `summary` paragraph**, with the institution's mark before it
+and the same staggered `<Reveal>` with the logo popping in. Both degrees stay listed, although
+LinkedIn shows only UWA.
+- **Logos:** the two universities are files, not inline SVG: `public/logos/uwa.svg` (UWA's own crest
+  SVG with the wordmark paths removed) and `public/logos/jsut.png` (JSUT only publishes its emblem as
+  a raster inside an SVG; cropped on its transparent background, 128 px tall, 64-colour palette).
+  `org-logo.tsx` draws them with a plain `<img>`. All logo keys are the `OrgLogoKey` union in `site-data.ts`.
+
 ### Projects → status lights (Crux, home lab)
 
 A project card with `uptime: { monitor, subject }` in `projects` shows three small lights in its

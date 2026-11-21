@@ -39,21 +39,6 @@ const CONTACT_ICON = {
 
 const period = "shrink-0 font-mono text-xs text-muted-foreground tabular-nums";
 
-function Points({ items }: { items: string[] }) {
-  return (
-    <ul className="mt-3 flex flex-col gap-1.5 text-sm leading-relaxed text-foreground/80">
-      {items.map((item) => (
-        <li key={item} className="flex gap-2.5">
-          <span aria-hidden className="text-muted-foreground">
-            –
-          </span>
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 // Heading row shared by experience and education entries: title left, dates right.
 function EntryHead({ title, sub, when }: { title: string; sub: string; when: string }) {
   return (
@@ -258,17 +243,22 @@ export function Skills() {
 
 export function Education() {
   return (
-    <Section id="education" command="cat education.md" title="Education">
-      <ol className="flex flex-col gap-8">
-        {education.map((e) => (
-          <li key={e.degree}>
-            <EntryHead title={e.degree} sub={`${e.org} · ${e.place}`} when={e.period} />
-            <p className="mt-0.5 text-xs text-muted-foreground">{e.detail}</p>
-            <Points items={e.points} />
-          </li>
-        ))}
-      </ol>
-    </Section>
+    <Reveal>
+      <Section id="education" command="cat education.md" title="Education">
+        <ol className="flex flex-col gap-7">
+          {education.map((e, n) => (
+            <li key={e.degree} className="reveal flex gap-4" style={at(1 + n * 1.5)}>
+              <OrgLogo logo={e.logo} className="reveal-logo mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <EntryHead title={e.degree} sub={`${e.org} · ${e.place}`} when={e.period} />
+                <p className="mt-0.5 text-xs text-muted-foreground">{e.detail}</p>
+                <p className="mt-2 text-sm leading-relaxed text-foreground/80">{e.summary}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Section>
+    </Reveal>
   );
 }
 

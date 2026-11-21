@@ -84,11 +84,14 @@ export const profile = {
   ] as Contact[],
 };
 
+/** Organisation marks drawn by org-logo.tsx (Experience and Education). */
+export type OrgLogoKey = "outlier" | "woolworths" | "cfaa" | "uber" | "uwa" | "jsut";
+
 export type ExperienceItem = {
   role: string;
   org: string;
   /** Mark shown before the entry (org-logo.tsx). */
-  logo: "outlier" | "woolworths" | "cfaa" | "uber";
+  logo: OrgLogoKey;
   place: string;
   period: string;
   /** One short line under the heading, e.g. how the role came about. */
@@ -237,31 +240,36 @@ export const skillGroups = [
 export type EducationItem = {
   degree: string;
   org: string;
+  /** Mark shown before the entry (org-logo.tsx). */
+  logo: OrgLogoKey;
   place: string;
   period: string;
+  /** One short line under the heading: specialisation, result. */
   detail: string;
-  points: string[];
+  /** One short paragraph. */
+  summary: string;
 };
 
 export const education: EducationItem[] = [
   {
     degree: "Master of Information Technology",
     org: "The University of Western Australia",
+    logo: "uwa",
     place: "Perth, WA",
     period: "2024 – 2026",
     detail: "Software Systems specialisation · Distinction average (WAM 74.3)",
-    points: [
-      "High Distinctions in the IT Capstone Project, High Performance Computing, Introduction to Cybersecurity and Computational Thinking with Python.",
-      "Recognised by the Department of Computer Science and Software Engineering (2024) for peer learning support in a cybersecurity study group.",
-    ],
+    summary:
+      "High Distinctions in the IT Capstone Project, High Performance Computing, Introduction to Cybersecurity " +
+      "and Computational Thinking with Python; recognised by the CSSE department for peer learning support.",
   },
   {
     degree: "Bachelor of Engineering (Automotive Service Engineering)",
     org: "Jiangsu University of Technology",
+    logo: "jsut",
     place: "Changzhou, China",
     period: "2019 – 2023",
     detail: "C programming, microcontrollers, electrical and electronic technology",
-    points: ["Final-year project: a Java-based vehicle rental management system."],
+    summary: "Final-year project: a Java-based vehicle rental management system.",
   },
 ];
 
