@@ -140,8 +140,8 @@ Section bodies are separated by top borders.
 Mirrors the LinkedIn Experience section, newest first, but **leaves out Peer Learning Support** on
 purpose. Each entry (`experience` in `site-data.ts`) has a role, organisation, place, period, an
 optional `note` line and **one short `summary` paragraph** (no bullet lists).
-- **Logos:** `org-logo.tsx` draws each organisation's mark before the entry, as inline SVG in a 40 px
-  bordered tile with a transparent background. The marks are official artwork cropped to the mark
+- **Logos:** `org-logo.tsx` draws each organisation's mark before the entry, as inline SVG, bare on the page (no tile or border)
+  in a 48 px box, with a little inset for solid marks so all read at the same weight. The marks are official artwork cropped to the mark
   (the sources are listed in the file). CfAA switches to its own dark-logo colours in dark mode, and
   the Uber wordmark uses the text colour. To add an organisation, add a key to `ExperienceItem["logo"]`
   and its SVG to `MARK`.

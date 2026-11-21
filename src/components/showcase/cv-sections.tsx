@@ -156,7 +156,7 @@ export function Experience() {
         <ol className="flex flex-col gap-7">
           {experience.map((e, n) => (
             <li key={e.role + e.org} className="reveal flex gap-4" style={at(1 + n * 1.5)}>
-              <OrgLogo logo={e.logo} className="reveal-logo mt-0.5" />
+              <OrgLogo logo={e.logo} className="reveal-logo" />
               <div className="min-w-0 flex-1">
                 <EntryHead title={e.role} sub={`${e.org} · ${e.place}`} when={e.period} />
                 {e.note && <p className="mt-0.5 text-xs text-muted-foreground">{e.note}</p>}
@@ -248,7 +248,7 @@ export function Education() {
         <ol className="flex flex-col gap-7">
           {education.map((e, n) => (
             <li key={e.degree} className="reveal flex gap-4" style={at(1 + n * 1.5)}>
-              <OrgLogo logo={e.logo} className="reveal-logo mt-0.5" />
+              <OrgLogo logo={e.logo} className="reveal-logo" />
               <div className="min-w-0 flex-1">
                 <EntryHead title={e.degree} sub={`${e.org} · ${e.place}`} when={e.period} />
                 <p className="mt-0.5 text-xs text-muted-foreground">{e.detail}</p>

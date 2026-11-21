@@ -53,16 +53,17 @@ const MARK: Record<OrgLogoKey, ReactNode> = {
   ),
 };
 
-// Wordmarks are wide, so they get less padding than square marks to read at the same weight.
-const PAD: Partial<Record<OrgLogoKey, string>> = { uber: "p-1.5", outlier: "p-1.5", uwa: "p-1.5", jsut: "p-1.5" };
+// Optical sizing: a solid disc or block of colour looks bigger than an open or tall mark of
+// the same box, so those get a little inset to read at the same weight.
+const PAD: Partial<Record<OrgLogoKey, string>> = { outlier: "p-1", cfaa: "p-1", woolworths: "p-0.5" };
 
-/** The organisation's mark in a small square tile; decorative (the name is next to it). */
+/** The organisation's mark, bare on the page in a 48 px box; decorative (the name is next to it). */
 export function OrgLogo({ logo, className }: { logo: OrgLogoKey; className?: string }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "flex size-10 shrink-0 items-center justify-center rounded-lg border bg-background p-2",
+        "flex size-12 shrink-0 items-center justify-center",
         PAD[logo],
         className,
       )}
