@@ -158,17 +158,26 @@ optional `note` line and **one short `summary` paragraph** (no bullet lists).
   tile or border). The marks are official artwork cropped to the mark (sources listed in the file),
   kept as files in `public/logos/`: `<key>.svg` or `.png`, plus `<key>-dark.svg` where the dark theme
   needs other colours (CfAA's own dark-logo colours, the Uber wordmark in near-white).
-- **Optical sizing:** every mark is sized by an algorithm so all read at the same visual size, whatever
-  their shape.
-  - `scripts/measure-logos.py` renders each file, crops it to its ink (`--trim`), and records two
-    numbers in the generated `src/lib/logo-metrics.ts`: `aspect` (ink width / height) and `coverage`
-    (inked share of the ink's bounding box: a solid disc is about 0.8, the open Woolworths wave 0.33).
-  - `org-logo.tsx` computes `S = T · coverage^-K`, `width = S · aspect^E`,
-    `height = S · aspect^(E − 1)`. Sparse marks grow a little to make up for their empty space
-    (`K` = 0.15). Wide wordmarks get a bit less than equal area so they don't sprawl (`E` = 0.25, where
-    0.5 would mean equal area).
-  - `T` is the largest size at which every mark still fits the 56 × 48 px slot, so no mark is
-    clamped out of proportion.
+- **Optical sizing:** an algorithm sizes every mark so that all of them read at the same visual size,
+  whatever their shape.
+  - **Principle:** two marks look the same size when the convex hulls of their *visible* parts have
+    the same area. Bounding boxes don't work for this, because a disc fills less of its box than a
+    shield does. Ink doesn't work either, because an open wave still reads as one shape.
+  - **Measuring:** `scripts/measure-logos.py` renders each file and crops it to its ink (`--trim`).
+    For each theme it weighs every pixel by alpha × its lightness contrast (CIE L*) with that theme's
+    page background, so white on white or black on near-black counts as unseen. It then takes the
+    convex hull of the visible pixels. The generated `src/lib/logo-metrics.ts` stores `aspect` and
+    `footprint.light` / `footprint.dark`: the hull's area as a share of the file's box.
+    - For example, a disc's footprint is 0.80. The UWA crest's is 0.69 on white, where its white
+      ribbon vanishes, and 0.85 on dark.
+  - **Formula** (in `org-logo.tsx`):
+    - box area = `T² · footprint⁻¹ · elongation^-G`
+    - width = `√(area · aspect)`, height = `√(area / aspect)`
+    - `elongation = max(aspect, 1/aspect)`. `G` (0.35) trims long, thin marks a little, such as the
+      Uber wordmark and CfAA's tall stack, because they spread their area out and read larger.
+    - `T` is, per theme, the largest size at which every mark fits the 56 × 48 px slot.
+  - **Per theme:** sizes are worked out for each theme and applied through CSS variables
+    (`--logo-w` / `--logo-w-dark` …).
   - **Adding an organisation:** put its file in `public/logos/`, add its key to `OrgLogoKey` in
     `site-data.ts`, and run `python3 scripts/measure-logos.py --trim`. This needs `rsvg-convert` and
     Pillow.
