@@ -166,20 +166,22 @@ export function About() {
 
 export function Experience() {
   return (
-    <Section id="experience" command="cat experience.md" title="Experience">
-      <ol className="flex flex-col gap-7">
-        {experience.map((e) => (
-          <li key={e.role + e.org} className="flex gap-4">
-            <OrgLogo logo={e.logo} className="mt-0.5" />
-            <div className="min-w-0 flex-1">
-              <EntryHead title={e.role} sub={`${e.org} · ${e.place}`} when={e.period} />
-              {e.note && <p className="mt-0.5 text-xs text-muted-foreground">{e.note}</p>}
-              <p className="mt-2 text-sm leading-relaxed text-foreground/80">{e.summary}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </Section>
+    <Reveal>
+      <Section id="experience" command="cat experience.md" title="Experience">
+        <ol className="flex flex-col gap-7">
+          {experience.map((e, n) => (
+            <li key={e.role + e.org} className="reveal flex gap-4" style={at(1 + n * 1.5)}>
+              <OrgLogo logo={e.logo} className="reveal-logo mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <EntryHead title={e.role} sub={`${e.org} · ${e.place}`} when={e.period} />
+                {e.note && <p className="mt-0.5 text-xs text-muted-foreground">{e.note}</p>}
+                <p className="mt-2 text-sm leading-relaxed text-foreground/80">{e.summary}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Section>
+    </Reveal>
   );
 }
 

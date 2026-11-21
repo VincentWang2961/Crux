@@ -145,6 +145,10 @@ optional `note` line and **one short `summary` paragraph** (no bullet lists).
   (the sources are listed in the file). CfAA switches to its own dark-logo colours in dark mode, and
   the Uber wordmark uses the text colour. To add an organisation, add a key to `ExperienceItem["logo"]`
   and its SVG to `MARK`.
+- **Scroll-in:** the section is wrapped in `<Reveal>`, like About. The header rises first, then each
+  entry rises, fades and un-blurs in turn (`--i` steps of 1.5, about 105 ms apart). Its logo tile pops
+  in a beat later, growing from 60 % and turning upright from -10° (`.reveal-logo` in `globals.css`).
+  Reduced motion shows everything at once.
 
 ### Projects → status lights (Crux, home lab)
 

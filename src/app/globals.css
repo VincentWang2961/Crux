@@ -469,7 +469,7 @@ html.theme-switching::view-transition-new(root) {
  * place, faded and soft; when the block reaches the viewport it rises in on an
  * expo-out curve (fast start, long gentle settle), staggered by `--i` × 70 ms.
  * `.reveal-photo` also grows from 94 %, and its `.reveal-zoom` image settles from 112 %,
- * like a print being laid down.
+ * like a print being laid down. `.reveal-logo` (Experience) pops in from 60 % and -10°.
  */
 :root {
   --reveal-ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -496,6 +496,17 @@ html.theme-switching::view-transition-new(root) {
 }
 [data-reveal="shown"] .reveal-zoom {
   transition: scale 1.6s var(--reveal-ease) 0.1s;
+}
+/* Experience logos: the tile pops in a beat after its entry, turning upright from -10°. */
+[data-reveal="armed"] .reveal-logo {
+  scale: 0.6;
+  rotate: -10deg;
+}
+[data-reveal="shown"] .reveal-logo {
+  transition:
+    scale 1.2s var(--reveal-ease),
+    rotate 1.2s var(--reveal-ease);
+  transition-delay: calc(var(--i, 0) * 70ms + 140ms);
 }
 
 /* Uptime lights on project cards (uptime-dots.tsx).
