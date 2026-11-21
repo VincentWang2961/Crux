@@ -217,8 +217,11 @@ with `href`.
 - `morePages` (optional): extra pages, see below.
 
 **One page first.** Everything goes on a single page:
-- From `sm` up, the photo sits on the left at its own aspect ratio, vertically centred against the
-  text column. On phones it becomes a 16:9 crop above the text.
+- The photo is never cropped: it always shows whole, at its own aspect ratio.
+  - From `sm` up it sits on the left, filling its column and vertically centred against the text.
+  - On phones it is centred above the text. Its height is whatever fits the panel's width, but at
+    most 42 svh: `h-[min(42svh, (100vw − 4.5rem) × h/w)]`, with the width following from
+    `aspect-ratio`.
 - The text column has the title, kind and period, then the overview, the sections, the stack and
   the links. GitHub links get the GitHub mark.
 - Keep the copy tight so that it fits. The IoT copy comes from its GitHub README and the commit

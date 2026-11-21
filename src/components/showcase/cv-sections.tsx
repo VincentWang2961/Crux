@@ -257,18 +257,19 @@ function ProjectDetails({ project: p }: { project: (typeof projects)[number] }) 
   const main = (
     <div className={cn("grid gap-5 p-5 sm:gap-6 sm:p-8", d.image && "sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] sm:items-center sm:gap-8")}>
       {d.image && (
-        // A 16:9 crop on phones; the whole photo at its own shape beside the text from sm up,
-        // centred against the text column.
+        // The whole photo at its own shape, never cropped. Phones: centred above the text, as
+        // tall as fits the panel's width but at most 42 % of the screen. sm up: beside the
+        // text, filling its column, centred against the text.
         <div
-          className="relative aspect-video overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10 sm:aspect-(--ratio)"
-          style={{ "--ratio": `${d.image.width} / ${d.image.height}` } as CSSProperties}
+          className="relative mx-auto aspect-(--ratio) h-[min(42svh,calc((100vw-4.5rem)*var(--inv)))] overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10 sm:h-auto sm:w-full"
+          style={{ "--ratio": `${d.image.width} / ${d.image.height}`, "--inv": d.image.height / d.image.width } as CSSProperties}
         >
           <Image
             src={d.image.src}
             alt={d.image.alt}
             fill
-            sizes="(min-width: 640px) 320px, 90vw"
-            className="object-cover object-[50%_70%] sm:object-center"
+            sizes="(min-width: 640px) 320px, 60vw"
+            className="object-cover"
           />
         </div>
       )}
