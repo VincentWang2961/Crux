@@ -353,6 +353,11 @@ the group has a full spoken label.
   last good reading. `getUptime(monitorId)` reads from that shared result.
 - `uptime-dots.tsx` renders at request time (`connection()` inside `<Suspense>`), so the rest of
   Projects stays static. No key or no data → nothing is rendered.
+- **Maintenance:** `uptime.maintenance: true` (set on the home lab) marks a service that goes down on
+  purpose. Whenever its monitor isn't up, the card's top-right corner shows an outlined "🔧 Under
+  maintenance" badge in place of the period (`UptimeCorner`, request time inside `<Suspense>`, falling
+  back to the period), and the Now light's tooltip and spoken label say "Under maintenance" instead of
+  "Offline". The lights keep their colours.
 - Needs `UPTIMEROBOT_API_KEY` (see Environment variables). To add lights to another card, give it
   `uptime: { monitor, subject }`; nothing else changes.
 

@@ -1,4 +1,5 @@
-import { Suspense, type CSSProperties } from "react";
+import { Suspense, type CSSProperties, type ReactNode } from "react";
+import { IconTool } from "@tabler/icons-react";
 import { connection } from "next/server";
 import { getUptime, type UptimeLevel, type UptimeSignal } from "@/lib/uptime";
 
@@ -29,19 +30,23 @@ const SUMMARY: Record<UptimeLevel, string> = {
   down: "offline",
 };
 
-type Props = { monitor: string; subject: string };
+type Props = { monitor: string; subject: string; maintenance?: boolean };
 
-async function Dots({ monitor, subject }: Props) {
+async function Dots({ monitor, subject, maintenance }: Props) {
   await connection();
   const uptime = await getUptime(monitor);
   if (!uptime) return null;
-  const signals: UptimeSignal[] = [uptime.now, uptime.day, uptime.week];
+  // A maintenance service that isn't up is down on purpose: say so instead of "offline".
+  const inMaintenance = maintenance && uptime.now.level !== "up";
+  const now = inMaintenance ? { ...uptime.now, detail: "Under maintenance" } : uptime.now;
+  const signals: UptimeSignal[] = [now, uptime.day, uptime.week];
   const words = signals.map((s) => `${s.label}: ${s.detail}`).join(". ");
+  const summary = inMaintenance ? "under maintenance" : SUMMARY[uptime.now.level];
 
   return (
     <span
       role="img"
-      aria-label={`${subject} status, ${SUMMARY[uptime.now.level]}. ${words}.`}
+      aria-label={`${subject} status, ${summary}. ${words}.`}
       title={signals.map((s) => `${s.label}: ${s.detail}`).join("\n")}
       className="inline-flex items-center gap-1.5"
     >
@@ -61,6 +66,28 @@ async function Dots({ monitor, subject }: Props) {
         </span>
       ))}
     </span>
+  );
+}
+
+// The card's top-right corner for a `maintenance` service: "Under maintenance" while it
+// isn't up, otherwise the usual period (`fallback`, also shown while loading or without data).
+async function Corner({ monitor, fallback }: { monitor: string; fallback: ReactNode }) {
+  await connection();
+  const uptime = await getUptime(monitor);
+  if (!uptime || uptime.now.level === "up") return fallback;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-xs text-muted-foreground">
+      <IconTool aria-hidden stroke={1.75} className="size-3.5" />
+      Under maintenance
+    </span>
+  );
+}
+
+export function UptimeCorner(props: { monitor: string; fallback: ReactNode }) {
+  return (
+    <Suspense fallback={props.fallback}>
+      <Corner {...props} />
+    </Suspense>
   );
 }
 

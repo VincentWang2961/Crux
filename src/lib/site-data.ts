@@ -163,8 +163,10 @@ export type Project = {
   /**
    * Live uptime lights (UptimeRobot) on the card. `monitor` is the monitor's numeric ID
    * (the number in its dashboard URL); `subject` names it in the spoken label.
+   * `maintenance`: any time the service isn't up, the card's top-right corner says
+   * "Under maintenance" in place of the period (for a lab that goes down on purpose).
    */
-  uptime?: { monitor: string; subject: string };
+  uptime?: { monitor: string; subject: string; maintenance?: boolean };
   /**
    * Opens the card into a details panel (project-flip.tsx). Everything fits on one page:
    * photo, overview, sections, stack and links. Only a project with more to say (several
@@ -223,7 +225,7 @@ export const projects: Project[] = [
   {
     name: "Personal Home Lab",
     kind: "Self-hosted infrastructure",
-    uptime: { monitor: "804697004", subject: "Home lab" }, // nas.vincentwang.au
+    uptime: { monitor: "804697004", subject: "Home lab", maintenance: true }, // nas.vincentwang.au
     period: "Ongoing",
     stack: ["Ubuntu", "Synology NAS", "Docker", "WireGuard", "SSL/TLS"],
     summary:

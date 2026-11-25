@@ -28,7 +28,7 @@ import { ProjectPager } from "./project-pager";
 import { Reveal } from "./reveal";
 import { Section } from "./section";
 import { SkillGrid } from "./skill-grid";
-import { UptimeDots } from "./uptime-dots";
+import { UptimeCorner, UptimeDots } from "./uptime-dots";
 
 // CV content for the middle of the home page (between the hero and the globe).
 // All copy lives in site-data.ts; these components only lay it out.
@@ -190,14 +190,18 @@ export function Projects() {
                       <ArrowUpRight className="size-4 text-muted-foreground transition-transform duration-(--dur-2) ease-move group-hover:-translate-y-px group-hover:translate-x-px" />
                     )}
                   </CardTitle>
-                  <span className={period}>{p.period}</span>
+                  {p.uptime?.maintenance ? (
+                    <UptimeCorner monitor={p.uptime.monitor} fallback={<span className={period}>{p.period}</span>} />
+                  ) : (
+                    <span className={period}>{p.period}</span>
+                  )}
                 </div>
                 <CardDescription className="flex items-center justify-between gap-3">
                   <span>
                     {p.kind}
                     {p.grade && ` · ${p.grade}`}
                   </span>
-                  {p.uptime && <UptimeDots {...p.uptime} />}
+                  {p.uptime && <UptimeDots monitor={p.uptime.monitor} subject={p.uptime.subject} maintenance={p.uptime.maintenance} />}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 text-sm leading-relaxed text-foreground/80">
