@@ -197,6 +197,34 @@ export const projects: Project[] = [
       "behind a Cloudflare Tunnel and redeployed automatically from GitHub.",
     href: "https://github.com/VincentWang2961/Crux",
     uptime: { monitor: "804588170", subject: "Website" }, // vincentwang.au
+    details: {
+      image: {
+        src: "/projects/crux.webp",
+        alt: "This site's first screen on a phone in the dark theme: a $ whoami prompt, the heading Hi, I'm Vincent Wang!, three roles and a Read my posts button",
+        width: 1050,
+        height: 1400,
+      },
+      overview:
+        "The site you're on, designed and built from scratch: a terminal-style first screen, my CV, Markdown posts " +
+        "in English and Chinese, a globe of my servers and a spread of travel photos. Self-hosted in Docker behind a " +
+        "Cloudflare Tunnel and redeployed automatically from GitHub.",
+      sections: [
+        {
+          title: "What I built",
+          items: [
+            "A mobile-first layout with light and dark themes, and one motion system across the site, reduced motion included.",
+            "Live status lights from the UptimeRobot API, and an availability calendar with a password-protected editor.",
+            "A Markdown blog translated by the Claude API, and a canvas-drawn dot globe of my servers.",
+            "Optical logo sizing: a script that measures each mark so they all read at the same size.",
+          ],
+        },
+      ],
+      stack: ["Next.js 16", "React", "TypeScript", "Tailwind CSS v4", "shadcn/ui", "Docker", "Cloudflare Tunnel", "Claude API"],
+      links: [
+        { label: "GitHub", href: "https://github.com/VincentWang2961/Crux" },
+        { label: "vincentwang.au", href: "https://vincentwang.au" },
+      ],
+    },
   },
   {
     name: "Personal Home Lab",

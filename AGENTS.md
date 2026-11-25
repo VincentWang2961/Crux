@@ -213,8 +213,8 @@ name, and the same scroll-in with the logo popping in.
 
 ### Projects → details panel
 
-A project with `details` in `projects` (`site-data.ts`) opens into a details panel. The Smart
-Plant Caring System (IoT) is the first one. Projects without `details` stay plain cards, or links
+A project with `details` in `projects` (`site-data.ts`) opens into a details panel: so far Crux
+and the Smart Plant Caring System (IoT). Projects without `details` stay plain cards, or links
 with `href`.
 
 **Data:** `details` has these fields:
@@ -222,7 +222,8 @@ with `href`.
 - `overview`: one paragraph;
 - `sections`: short `{ title, items }` lists, such as "What I did";
 - `stack`: a list of strings, shown as badges;
-- `links` (optional): a list of `{ label, href }`;
+- `links` (optional): a list of `{ label, href }`. The card's own `href` is added as "View
+  project" unless one of these links already points there;
 - `morePages` (optional): extra pages, see below.
 
 **One page first.** Everything goes on a single page:
@@ -235,6 +236,8 @@ with `href`.
   the links. GitHub links get the GitHub mark.
 - Keep the copy tight so that it fits. The IoT copy comes from its GitHub README and the commit
   history (Vincent's own part).
+- Crux's photo (`public/projects/crux.webp`) is a screenshot of this site's first screen on a
+  phone (390 px wide at 3×, dark theme), cropped to 3:4.
 
 Only a project with more to say (such as the home lab's several services) sets `morePages`. The
 panel then becomes a `ProjectPager` (`project-pager.tsx`):

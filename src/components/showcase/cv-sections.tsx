@@ -263,7 +263,9 @@ function SectionList({ sections }: { sections: DetailSection[] }) {
 
 function ProjectDetails({ project: p }: { project: (typeof projects)[number] }) {
   const d = p.details!;
-  const links = [...(d.links ?? []), ...(p.href ? [{ label: "View project", href: p.href }] : [])];
+  // The card's own link joins the list unless the details already give it.
+  const links = [...(d.links ?? [])];
+  if (p.href && !links.some((l) => l.href === p.href)) links.push({ label: "View project", href: p.href });
   const main = (
     <div className={cn("grid gap-5 p-5 sm:gap-6 sm:p-8", d.image && "sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] sm:items-center sm:gap-8")}>
       {d.image && (
