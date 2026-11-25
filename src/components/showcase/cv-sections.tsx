@@ -329,7 +329,8 @@ function ProjectDetails({ project: p }: { project: (typeof projects)[number] }) 
 
   if (!d.morePages?.length) {
     return (
-      <div className="h-full overflow-y-auto overscroll-contain" data-page-body>
+      // Text alone reads better on a narrower panel: about 80 characters a line.
+      <div className="h-full overflow-y-auto overscroll-contain" data-page-body data-panel-max={d.image ? undefined : 640}>
         {main}
         {/* "More below": fades out as you reach the end; absent when it all fits (globals.css). */}
         <div aria-hidden className="details-more pointer-events-none sticky bottom-0 -mt-14 h-14 bg-linear-to-t from-card to-transparent" />

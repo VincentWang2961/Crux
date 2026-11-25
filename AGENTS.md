@@ -236,8 +236,8 @@ with `href`.
   the links. GitHub links get the GitHub mark.
 - Keep the copy tight so that it fits. The IoT copy comes from its GitHub README and the commit
   history (Vincent's own part).
-- Crux's photo (`public/projects/crux.webp`) is a screenshot of this site's first screen on a
-  phone (390 px wide at 3×, dark theme), cropped to 3:4.
+- Without an `image` (Crux) the panel is the text column alone, and narrower: at most 640 px
+  (`data-panel-max` on the page body, read by `project-flip.tsx`), about 80 characters a line.
 
 Only a project with more to say (such as the home lab's several services) sets `morePages`. The
 panel then becomes a `ProjectPager` (`project-pager.tsx`):

@@ -55,11 +55,13 @@ export function ProjectFlip({ title, front, back }: Props) {
     return a;
   };
 
-  // The open panel: centred, up to PANEL_MAX_W wide, as tall as its content (the tallest
+  // The open panel: centred, up to PANEL_MAX_W wide (or the details' own `data-panel-max`), as tall as its content (the tallest
   // page, for a pager), within the screen. The details are laid out at that size once, here.
   const panelRect = (): Rect => {
     const b = backLayer.current!;
-    const width = Math.min(PANEL_MAX_W, window.innerWidth - GUTTER * 2);
+    // The details can ask for a narrower panel (`data-panel-max`, px), e.g. text without a photo.
+    const cap = Number(b.querySelector("[data-panel-max]")?.getAttribute("data-panel-max")) || PANEL_MAX_W;
+    const width = Math.min(cap, window.innerWidth - GUTTER * 2);
     b.style.width = `${width}px`;
     b.style.height = "auto";
     const pages = b.querySelectorAll<HTMLElement>("[data-page-body]");

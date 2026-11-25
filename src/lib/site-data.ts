@@ -198,12 +198,6 @@ export const projects: Project[] = [
     href: "https://github.com/VincentWang2961/Crux",
     uptime: { monitor: "804588170", subject: "Website" }, // vincentwang.au
     details: {
-      image: {
-        src: "/projects/crux.webp",
-        alt: "This site's first screen on a phone in the dark theme: a $ whoami prompt, the heading Hi, I'm Vincent Wang!, three roles and a Read my posts button",
-        width: 1050,
-        height: 1400,
-      },
       overview:
         "The site you're on, designed and built from scratch: a terminal-style first screen, my CV, Markdown posts " +
         "in English and Chinese, a globe of my servers and a spread of travel photos. Self-hosted in Docker behind a " +
