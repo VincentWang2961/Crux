@@ -193,12 +193,9 @@ chips. Never one tag per line.
   (Windows, Docker, Python …), a plain symbol otherwise (a CPU for hardware, a shield-lock for
   WireGuard). Each skill names an `icon` key; `SKILL_ICON` maps keys to components. To add one,
   add the key to the `SkillIcon` union and to `SKILL_ICON`. Monochrome, like the rest of the site.
-- **Weekly vs used:** `daily: true` chips (what Vincent uses every week) are filled and outlined
-  in full ink; the rest have no surface and muted ink, so the weekly set stands out in either
-  theme. A small legend under the rows says so, and daily chips carry "(use weekly)" for screen
-  readers.
-- **Size:** chips are 26 px tall on phones (28 px from `sm`), and chips without a surface have less
-  side padding; the section fits one phone screen.
+- **One style:** every chip looks the same: outlined like the project badges, text in 80 % ink and
+  the icon muted until hover. No "weekly / used" tiers.
+- **Size:** chips are 26 px tall on phones (28 px from `sm`), so the section fits one phone screen.
 - **Motion:** each row scrolls in through `<Reveal>`, then its chips pop in one after another
   (`.skill-chip` in `globals.css`: from 80 %, `--j` × 35 ms after the row). On hover a chip
   inks in and its icon tilts and grows a little.

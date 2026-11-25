@@ -287,8 +287,7 @@ export const projects: Project[] = [
 ];
 
 // Skills (skill-grid.tsx): groups of icon chips. `icon` is a key of SKILL_ICON there (Tabler
-// outline icons: brand marks where the tool has one, a plain symbol otherwise). `daily` marks
-// what I use every week, drawn solid; the rest are things I have used and can pick up again.
+// outline icons: brand marks where the tool has one, a plain symbol otherwise).
 export type SkillIcon =
   | "windows" | "office" | "directory" | "policy" | "imaging" | "hardware" | "printer"
   | "network" | "router" | "vpn" | "firewall" | "certificate" | "cloudflare"
@@ -296,16 +295,16 @@ export type SkillIcon =
   | "python" | "typescript" | "nextjs" | "react" | "bash" | "git" | "database" | "mysql" | "graph"
   | "docs" | "accessibility" | "jira" | "asana" | "support" | "team";
 
-export type Skill = { name: string; icon: SkillIcon; daily?: boolean };
+export type Skill = { name: string; icon: SkillIcon };
 export type SkillGroup = { area: string; items: Skill[] };
 
 export const skillGroups: SkillGroup[] = [
   {
     area: "Support & Windows",
     items: [
-      { name: "Windows 10/11", icon: "windows", daily: true },
-      { name: "Microsoft 365", icon: "office", daily: true },
-      { name: "Hardware repair", icon: "hardware", daily: true },
+      { name: "Windows 10/11", icon: "windows" },
+      { name: "Microsoft 365", icon: "office" },
+      { name: "Hardware repair", icon: "hardware" },
       { name: "Active Directory", icon: "directory" },
       { name: "Group Policy", icon: "policy" },
       { name: "Imaging · Clonezilla", icon: "imaging" },
@@ -315,10 +314,10 @@ export const skillGroups: SkillGroup[] = [
   {
     area: "Networking",
     items: [
-      { name: "TCP/IP · DHCP · DNS", icon: "network", daily: true },
-      { name: "WireGuard", icon: "vpn", daily: true },
-      { name: "Cloudflare", icon: "cloudflare", daily: true },
-      { name: "Reverse proxy · TLS", icon: "certificate", daily: true },
+      { name: "TCP/IP · DHCP · DNS", icon: "network" },
+      { name: "WireGuard", icon: "vpn" },
+      { name: "Cloudflare", icon: "cloudflare" },
+      { name: "Reverse proxy · TLS", icon: "certificate" },
       { name: "Routers & Wi-Fi", icon: "router" },
       { name: "Firewalls · fail2ban", icon: "firewall" },
     ],
@@ -326,10 +325,10 @@ export const skillGroups: SkillGroup[] = [
   {
     area: "Servers & cloud",
     items: [
-      { name: "Ubuntu", icon: "ubuntu", daily: true },
-      { name: "Docker", icon: "docker", daily: true },
-      { name: "SSH", icon: "ssh", daily: true },
-      { name: "Synology DSM", icon: "nas", daily: true },
+      { name: "Ubuntu", icon: "ubuntu" },
+      { name: "Docker", icon: "docker" },
+      { name: "SSH", icon: "ssh" },
+      { name: "Synology DSM", icon: "nas" },
       { name: "RAID · backups", icon: "backup" },
       { name: "AWS", icon: "aws" },
       { name: "Azure", icon: "azure" },
@@ -338,10 +337,10 @@ export const skillGroups: SkillGroup[] = [
   {
     area: "Code & data",
     items: [
-      { name: "TypeScript", icon: "typescript", daily: true },
-      { name: "Next.js", icon: "nextjs", daily: true },
-      { name: "Python", icon: "python", daily: true },
-      { name: "Git", icon: "git", daily: true },
+      { name: "TypeScript", icon: "typescript" },
+      { name: "Next.js", icon: "nextjs" },
+      { name: "Python", icon: "python" },
+      { name: "Git", icon: "git" },
       { name: "React", icon: "react" },
       { name: "Bash", icon: "bash" },
       { name: "PostgreSQL", icon: "database" },
@@ -352,8 +351,8 @@ export const skillGroups: SkillGroup[] = [
   {
     area: "Ways of working",
     items: [
-      { name: "Customer service", icon: "support", daily: true },
-      { name: "Team leadership", icon: "team", daily: true },
+      { name: "Customer service", icon: "support" },
+      { name: "Team leadership", icon: "team" },
       { name: "Documentation", icon: "docs" },
       { name: "WCAG testing", icon: "accessibility" },
       { name: "Jira", icon: "jira" },
