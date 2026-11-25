@@ -19,12 +19,45 @@ export const LOGO_METRICS = {
       "dark": 0.8375
     }
   },
+  "comptia": {
+    "src": "/logos/comptia.svg",
+    "aspect": 4.5714,
+    "footprint": {
+      "light": 0.8519,
+      "dark": 0.8508
+    }
+  },
+  "github": {
+    "src": "/logos/github.svg",
+    "darkSrc": "/logos/github-dark.svg",
+    "aspect": 1.022,
+    "footprint": {
+      "light": 0.808,
+      "dark": 0.808
+    }
+  },
   "jsut": {
     "src": "/logos/jsut.png",
     "aspect": 0.8203,
     "footprint": {
       "light": 0.8314,
       "dark": 0.8261
+    }
+  },
+  "neo4j": {
+    "src": "/logos/neo4j.svg",
+    "aspect": 1.06,
+    "footprint": {
+      "light": 0.7488,
+      "dark": 0.7487
+    }
+  },
+  "oracle": {
+    "src": "/logos/oracle.svg",
+    "aspect": 1.5754,
+    "footprint": {
+      "light": 0.8729,
+      "dark": 0.8723
     }
   },
   "outlier": {

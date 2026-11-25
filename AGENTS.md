@@ -172,7 +172,8 @@ optional `note` line and **one short `summary` paragraph** (no bullet lists).
     - width = `√(area · aspect)`, height = `√(area / aspect)`
     - `elongation = max(aspect, 1/aspect)`. `G` (0.35) trims long, thin marks a little, such as the
       Uber wordmark and CfAA's tall stack, because they spread their area out and read larger.
-    - `T` is, per theme, the largest size at which every mark fits the 56 × 48 px slot.
+    - `T` is, per theme, the largest size at which every mark of the set fits its slot: 56 × 48 px
+      for Experience and Education, 56 × 36 px for Certifications (see below).
   - **Per theme:** sizes are worked out for each theme and applied through CSS variables
     (`--logo-w` / `--logo-w-dark` …).
   - **Adding an organisation:** put its file in `public/logos/`, add its key to `OrgLogoKey` in
@@ -197,6 +198,18 @@ LinkedIn shows only UWA.
       and blue lettering. On white it would vanish.
   - **JSUT:** `public/logos/jsut.png`. JSUT only publishes its emblem as a raster inside an SVG, so
     it is cropped on its transparent background, 128 px tall, with a 64-colour palette.
+
+### Certifications
+
+Each entry (`certifications` in `site-data.ts`) has a name, `issuer`, `logo`, date and optional
+`note`. The issuer's mark sits before it, with the issuer (and note) on a muted line under the
+name, and the same scroll-in with the logo popping in.
+- **Logos:** CompTIA, Oracle, Neo4j and GitHub are the Simple Icons paths in each brand's colour
+  (Oracle in its current Oracle Red; GitHub near-black / near-white per theme, as `github-dark.svg`).
+- **Their own slot:** `<OrgLogo size="sm">`, 56 × 36 px, as wide as the Experience slot so the logo
+  columns line up, but shorter for the compact rows. Optical sizing works the same way, but `T`
+  is worked out over the certification marks alone, so the wide CompTIA wordmark can't shrink the
+  Experience and Education marks (which use `size="md"`, 56 × 48).
 
 ### Projects → details panel
 

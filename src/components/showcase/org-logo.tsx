@@ -1,9 +1,9 @@
 import type { CSSProperties } from "react";
 import { LOGO_METRICS } from "@/lib/logo-metrics";
-import type { OrgLogoKey } from "@/lib/site-data";
+import { certifications, education, experience, type OrgLogoKey } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
 
-// Organisation marks for the Experience and Education sections. Each is a file in
+// Organisation marks for the Experience, Education and Certifications sections. Each is a file in
 // public/logos/ (<key>.svg or .png, plus <key>-dark.svg where the dark theme needs other
 // colours), cropped to its ink by scripts/measure-logos.py. Sources (official artwork):
 // - Woolworths Group: woolworthsgroup.com.au logo.svg, wave mark only (wordmark removed).
@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 //   logo (blue ribbon, white lettering; Wikipedia's "The University of Western Australia logo.svg").
 //   Dark: uwa.edu.au uwacrest-small-white.svg (white ribbon, blue lettering) → uwa-dark.svg.
 // - Jiangsu University of Technology: jsut.edu.cn logo.svg (a PNG inside an SVG), emblem only.
+// - Certification issuers (CompTIA, Oracle, Neo4j, GitHub): Simple Icons paths in each brand's
+//   colour (Oracle in its current Oracle Red, GitHub near-black / near-white per theme).
 // To add one: drop the file in public/logos/, add its key to OrgLogoKey (site-data.ts) and
 // re-run `python3 scripts/measure-logos.py --trim`.
 
@@ -26,11 +28,18 @@ import { cn } from "@/lib/utils";
 //   box area = T² · footprint⁻¹ · elongation^-G,  width = √(area · aspect), height = √(area / aspect)
 // The elongation term (elongation = max(aspect, 1 / aspect)) trims very wide or tall marks
 // a little, since a long thin shape spreads its area out and reads larger (the Uber
-// wordmark, CfAA's tall stack). T is the largest size at which every mark fits the slot,
-// worked out per theme, so no mark is clamped out of proportion.
+// wordmark, CfAA's tall stack). T is the largest size at which every mark of a set fits its
+// slot, worked out per theme, so no mark is clamped out of proportion.
+// Two sets, two slots: Experience and Education share the 56 × 48 slot; Certifications have
+// their own 56 × 36 slot (as wide as the one above, so the columns line up, but shorter for compact rows), and its wide CompTIA wordmark sets only that
+// set's T, so it can't shrink the marks above.
 const G = 0.35;
-const SLOT_W = 56;
-const SLOT_H = 48;
+
+type Size = "md" | "sm";
+const SLOT: Record<Size, { w: number; h: number; keys: OrgLogoKey[] }> = {
+  md: { w: 56, h: 48, keys: [...experience, ...education].map((e) => e.logo) },
+  sm: { w: 56, h: 36, keys: certifications.map((c) => c.logo) },
+};
 
 type Theme = "light" | "dark";
 type Metrics = (typeof LOGO_METRICS)[OrgLogoKey];
@@ -41,32 +50,36 @@ const shape = (m: Metrics, theme: Theme) => {
   return { w: Math.sqrt(area * m.aspect), h: Math.sqrt(area / m.aspect) };
 };
 
-const scale = (theme: Theme) =>
+const scale = (size: Size, theme: Theme) =>
   Math.min(
-    ...Object.values(LOGO_METRICS).map((m) => {
-      const { w, h } = shape(m, theme);
-      return Math.min(SLOT_W / w, SLOT_H / h);
+    ...SLOT[size].keys.map((key) => {
+      const { w, h } = shape(LOGO_METRICS[key], theme);
+      return Math.min(SLOT[size].w / w, SLOT[size].h / h);
     }),
   );
-const T = { light: scale("light"), dark: scale("dark") };
+const T = {
+  md: { light: scale("md", "light"), dark: scale("md", "dark") },
+  sm: { light: scale("sm", "light"), dark: scale("sm", "dark") },
+};
 
 const rem = (px: number) => `${(px / 16).toFixed(3)}rem`;
 
 /** The organisation's mark, optically sized and bare on the page; decorative (the name is next to it). */
-export function OrgLogo({ logo, className }: { logo: OrgLogoKey; className?: string }) {
+export function OrgLogo({ logo, size = "md", className }: { logo: OrgLogoKey; size?: Size; className?: string }) {
   const m = LOGO_METRICS[logo];
+  const t = T[size];
   const light = shape(m, "light");
   const dark = shape(m, "dark");
-  const size = {
-    "--logo-w": rem(T.light * light.w),
-    "--logo-h": rem(T.light * light.h),
-    "--logo-w-dark": rem(T.dark * dark.w),
-    "--logo-h-dark": rem(T.dark * dark.h),
+  const vars = {
+    "--logo-w": rem(t.light * light.w),
+    "--logo-h": rem(t.light * light.h),
+    "--logo-w-dark": rem(t.dark * dark.w),
+    "--logo-h-dark": rem(t.dark * dark.h),
   } as CSSProperties;
   const img = "h-(--logo-h) w-(--logo-w) max-w-none dark:h-(--logo-h-dark) dark:w-(--logo-w-dark)";
   const darkSrc = "darkSrc" in m ? m.darkSrc : undefined;
   return (
-    <span aria-hidden style={size} className={cn("flex h-12 w-14 shrink-0 items-center justify-center", className)}>
+    <span aria-hidden style={vars} className={cn("flex shrink-0 items-center justify-center", size === "md" ? "h-12 w-14" : "h-9 w-14", className)}>
       {/* Plain <img>: tiny static files drawn at their own size; nothing to optimise. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={m.src} alt="" className={cn(img, darkSrc && "dark:hidden")} />

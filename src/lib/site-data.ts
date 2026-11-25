@@ -85,7 +85,17 @@ export const profile = {
 };
 
 /** Organisation marks drawn by org-logo.tsx (Experience and Education). */
-export type OrgLogoKey = "outlier" | "woolworths" | "cfaa" | "uber" | "uwa" | "jsut";
+export type OrgLogoKey =
+  | "outlier"
+  | "woolworths"
+  | "cfaa"
+  | "uber"
+  | "uwa"
+  | "jsut"
+  | "comptia"
+  | "oracle"
+  | "neo4j"
+  | "github";
 
 export type ExperienceItem = {
   role: string;
@@ -317,11 +327,13 @@ export const education: EducationItem[] = [
   },
 ];
 
-export const certifications = [
-  { name: "CompTIA A+ Core 1 (220-1201)", date: "Jan 2026", note: "Core 2 in preparation" },
-  { name: "Oracle Certified Professional – MySQL 8.0 Database Administrator", date: "Jul 2025" },
-  { name: "Neo4j Certified Professional", date: "Jul 2025" },
-  { name: "GitHub Foundations", date: "2025" },
+export type CertificationItem = { name: string; issuer: string; logo: OrgLogoKey; date: string; note?: string };
+
+export const certifications: CertificationItem[] = [
+  { name: "CompTIA A+ Core 1 (220-1201)", issuer: "CompTIA", logo: "comptia", date: "Jan 2026", note: "Core 2 in preparation" },
+  { name: "Oracle Certified Professional – MySQL 8.0 Database Administrator", issuer: "Oracle", logo: "oracle", date: "Jul 2025" },
+  { name: "Neo4j Certified Professional", issuer: "Neo4j", logo: "neo4j", date: "Jul 2025" },
+  { name: "GitHub Foundations", issuer: "GitHub", logo: "github", date: "2025" },
 ];
 
 // Server deployment locations shown on the matrix globe (see AGENTS.md → "Matrix globe").

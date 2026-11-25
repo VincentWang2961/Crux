@@ -402,13 +402,19 @@ export function Certifications() {
           <li
             key={c.name}
             style={at(1 + n * 0.75)}
-            className="reveal flex flex-col gap-x-4 gap-y-0.5 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-baseline sm:justify-between"
+            className="reveal flex items-center gap-4 py-3 first:pt-0 last:pb-0"
           >
-            <div>
-              <p className="text-sm">{c.name}</p>
-              {c.note && <p className="text-xs text-muted-foreground">{c.note}</p>}
+            <OrgLogo logo={c.logo} size="sm" className="reveal-logo" />
+            <div className="flex min-w-0 flex-1 flex-col gap-x-4 gap-y-0.5 sm:flex-row sm:items-baseline sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm">{c.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {c.issuer}
+                  {c.note && ` · ${c.note}`}
+                </p>
+              </div>
+              <span className={period}>{c.date}</span>
             </div>
-            <span className={period}>{c.date}</span>
           </li>
         ))}
       </ul>
