@@ -18,7 +18,6 @@ import {
   experience,
   profile,
   projects,
-  skillGroups,
 } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
 import { DetailsHint } from "./details-hint";
@@ -28,6 +27,7 @@ import { ProjectFlip } from "./project-flip";
 import { ProjectPager } from "./project-pager";
 import { Reveal } from "./reveal";
 import { Section } from "./section";
+import { SkillGrid } from "./skill-grid";
 import { UptimeDots } from "./uptime-dots";
 
 // CV content for the middle of the home page (between the hero and the globe).
@@ -355,22 +355,9 @@ function ProjectDetails({ project: p }: { project: (typeof projects)[number] }) 
 export function Skills() {
   return (
     <Reveal>
-    <Section id="skills" command="cat skills.md" title="Skills">
-      <dl className="flex flex-col gap-4">
-        {skillGroups.map((g, n) => (
-          <div key={g.area} className="reveal grid gap-2 sm:grid-cols-[10rem_1fr] sm:gap-4" style={at(1 + n * 0.75)}>
-            <dt className="text-sm text-muted-foreground sm:pt-0.5">{g.area}</dt>
-            <dd className="flex flex-wrap gap-1.5">
-              {g.items.map((item) => (
-                <Badge key={item} variant="secondary">
-                  {item}
-                </Badge>
-              ))}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </Section>
+      <Section id="skills" command="cat skills.md" title="Skills">
+        <SkillGrid />
+      </Section>
     </Reveal>
   );
 }

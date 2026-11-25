@@ -545,6 +545,20 @@ html.theme-switching::view-transition-new(root) {
   transition-delay: calc(var(--reveal-delay, 0ms) + 140ms);
 }
 
+/* Skills (skill-grid.tsx): once its row starts rising, each chip pops in after the one before. */
+[data-reveal-item="wait"] .skill-chip {
+  opacity: 0;
+  scale: 0.8;
+}
+[data-reveal-item="shown"] .skill-chip {
+  transition:
+    opacity 0.5s var(--ease-enter),
+    scale 0.7s var(--ease-enter),
+    color var(--dur-1),
+    border-color var(--dur-1);
+  transition-delay: calc(var(--reveal-delay, 0ms) + 120ms + var(--j, 0) * 35ms), calc(var(--reveal-delay, 0ms) + 120ms + var(--j, 0) * 35ms), 0ms, 0ms;
+}
+
 /* Uptime lights on project cards (uptime-dots.tsx).
    One number per light, --breath (0 = rest, 1 = peak), drives everything: core brightness,
    a slight swell, a white-hot centre, the glow and, on HDR screens, an HDR sprite. It follows

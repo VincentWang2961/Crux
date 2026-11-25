@@ -184,6 +184,25 @@ optional `note` line and **one short `summary` paragraph** (no bullet lists).
   in a beat later, growing from 60 % and turning upright from -10° (`.reveal-logo` in `globals.css`).
   Reduced motion shows everything at once.
 
+### Skills
+
+`skill-grid.tsx`, data in `skillGroups` (`site-data.ts`). The whole stack reads at a glance in a
+few lines: one row per group (label on the left from `sm`, above on phones), then a wrap of icon
+chips. Never one tag per line.
+- **Icons:** Tabler outline icons only, for one stroke style: the brand mark where a tool has one
+  (Windows, Docker, Python …), a plain symbol otherwise (a CPU for hardware, a shield-lock for
+  WireGuard). Each skill names an `icon` key; `SKILL_ICON` maps keys to components. To add one,
+  add the key to the `SkillIcon` union and to `SKILL_ICON`. Monochrome, like the rest of the site.
+- **Weekly vs used:** `daily: true` chips (what Vincent uses every week) are filled and outlined
+  in full ink; the rest have no surface and muted ink, so the weekly set stands out in either
+  theme. A small legend under the rows says so, and daily chips carry "(use weekly)" for screen
+  readers.
+- **Size:** chips are 26 px tall on phones (28 px from `sm`), and chips without a surface have less
+  side padding; the section fits one phone screen.
+- **Motion:** each row scrolls in through `<Reveal>`, then its chips pop in one after another
+  (`.skill-chip` in `globals.css`: from 80 %, `--j` × 35 ms after the row). On hover a chip
+  inks in and its icon tilts and grows a little.
+
 ### Education
 
 Built the same way as Experience: each entry (`education` in `site-data.ts`) has a `detail` line

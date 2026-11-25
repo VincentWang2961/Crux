@@ -286,30 +286,79 @@ export const projects: Project[] = [
   },
 ];
 
-export const skillGroups = [
+// Skills (skill-grid.tsx): groups of icon chips. `icon` is a key of SKILL_ICON there (Tabler
+// outline icons: brand marks where the tool has one, a plain symbol otherwise). `daily` marks
+// what I use every week, drawn solid; the rest are things I have used and can pick up again.
+export type SkillIcon =
+  | "windows" | "office" | "directory" | "policy" | "imaging" | "hardware" | "printer"
+  | "network" | "router" | "vpn" | "firewall" | "certificate" | "cloudflare"
+  | "ubuntu" | "docker" | "ssh" | "nas" | "backup" | "aws" | "azure"
+  | "python" | "typescript" | "nextjs" | "react" | "bash" | "git" | "database" | "mysql" | "graph"
+  | "docs" | "accessibility" | "jira" | "asana" | "support" | "team";
+
+export type Skill = { name: string; icon: SkillIcon; daily?: boolean };
+export type SkillGroup = { area: string; items: Skill[] };
+
+export const skillGroups: SkillGroup[] = [
   {
-    area: "Windows & Microsoft",
-    items: ["Windows 10/11", "Imaging (Clonezilla)", "Microsoft 365", "SharePoint", "Active Directory", "Group Policy"],
-  },
-  {
-    area: "End-user support",
-    items: ["Hardware diagnostics", "Component replacement", "Boot troubleshooting", "Printers & peripherals", "Drivers"],
+    area: "Support & Windows",
+    items: [
+      { name: "Windows 10/11", icon: "windows", daily: true },
+      { name: "Microsoft 365", icon: "office", daily: true },
+      { name: "Hardware repair", icon: "hardware", daily: true },
+      { name: "Active Directory", icon: "directory" },
+      { name: "Group Policy", icon: "policy" },
+      { name: "Imaging · Clonezilla", icon: "imaging" },
+      { name: "Printers", icon: "printer" },
+    ],
   },
   {
     area: "Networking",
-    items: ["TCP/IP", "DHCP", "DNS", "Router, switch & Wi-Fi", "Port forwarding", "WireGuard VPN"],
+    items: [
+      { name: "TCP/IP · DHCP · DNS", icon: "network", daily: true },
+      { name: "WireGuard", icon: "vpn", daily: true },
+      { name: "Cloudflare", icon: "cloudflare", daily: true },
+      { name: "Reverse proxy · TLS", icon: "certificate", daily: true },
+      { name: "Routers & Wi-Fi", icon: "router" },
+      { name: "Firewalls · fail2ban", icon: "firewall" },
+    ],
   },
   {
-    area: "Linux & infrastructure",
-    items: ["Ubuntu", "SSH", "Firewalls & fail2ban", "Synology DSM", "RAID/SHR & backups", "Docker", "Reverse proxy & SSL/TLS"],
+    area: "Servers & cloud",
+    items: [
+      { name: "Ubuntu", icon: "ubuntu", daily: true },
+      { name: "Docker", icon: "docker", daily: true },
+      { name: "SSH", icon: "ssh", daily: true },
+      { name: "Synology DSM", icon: "nas", daily: true },
+      { name: "RAID · backups", icon: "backup" },
+      { name: "AWS", icon: "aws" },
+      { name: "Azure", icon: "azure" },
+    ],
   },
   {
-    area: "Data & development",
-    items: ["SQL", "PostgreSQL", "MySQL", "Neo4j", "Python", "Bash", "TypeScript", "Git", "AWS & Azure"],
+    area: "Code & data",
+    items: [
+      { name: "TypeScript", icon: "typescript", daily: true },
+      { name: "Next.js", icon: "nextjs", daily: true },
+      { name: "Python", icon: "python", daily: true },
+      { name: "Git", icon: "git", daily: true },
+      { name: "React", icon: "react" },
+      { name: "Bash", icon: "bash" },
+      { name: "PostgreSQL", icon: "database" },
+      { name: "MySQL", icon: "mysql" },
+      { name: "Neo4j", icon: "graph" },
+    ],
   },
   {
-    area: "Professional",
-    items: ["Technical documentation", "WCAG testing", "Jira & Asana", "Customer service", "Team leadership"],
+    area: "Ways of working",
+    items: [
+      { name: "Customer service", icon: "support", daily: true },
+      { name: "Team leadership", icon: "team", daily: true },
+      { name: "Documentation", icon: "docs" },
+      { name: "WCAG testing", icon: "accessibility" },
+      { name: "Jira", icon: "jira" },
+      { name: "Asana", icon: "asana" },
+    ],
   },
 ];
 
