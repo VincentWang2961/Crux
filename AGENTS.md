@@ -229,8 +229,8 @@ name, and the same scroll-in with the logo popping in.
 
 ### Projects → details panel
 
-A project with `details` in `projects` (`site-data.ts`) opens into a details panel: so far Crux
-and the Smart Plant Caring System (IoT). Projects without `details` stay plain cards, or links
+A project with `details` in `projects` (`site-data.ts`) opens into a details panel: so far Crux,
+AutoMailing and the Smart Plant Caring System (IoT). Projects without `details` stay plain cards, or links
 with `href`.
 
 **Data:** `details` has these fields:
@@ -252,6 +252,10 @@ with `href`.
   the links. GitHub links get the GitHub mark.
 - Keep the copy tight so that it fits. The IoT copy comes from its GitHub README and the commit
   history (Vincent's own part).
+- **AutoMailing** lives in a **private** repository, so its card has no `href` or GitHub link (visitors
+  would get a 404). Its copy comes from the repo's `docs/job-mail/`. Internal hostnames, webhook paths
+  and where secrets are kept are deliberately left off the site. It uses `morePages` for a "Safety" page. Keep its copy
+  objective and impersonal: what the system is and does, with no backstory or first person.
 - Without an `image` (Crux) the panel is the text column alone, and narrower: at most 640 px
   (`data-panel-max` on the page body, read by `project-flip.tsx`), about 80 characters a line.
 

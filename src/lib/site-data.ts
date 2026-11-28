@@ -233,6 +233,60 @@ export const projects: Project[] = [
       "hardened with SSH keys, firewall rules and fail2ban, with RAID/SHR storage, scheduled backups and monitoring.",
   },
   {
+    // Private repository (VincentWang2961/AutoMailing), so no GitHub link. Copy comes from its
+    // docs/job-mail; internal hostnames, paths and secrets are deliberately left out.
+    name: "AutoMailing",
+    kind: "Job-mail automation · in testing",
+    period: "2026",
+    stack: ["n8n", "Python", "FastAPI", "PostgreSQL", "OpenAI API"],
+    summary:
+      "A self-hosted job-mail assistant that classifies incoming email with an LLM, forwards interview and assessment " +
+      "invites with a drafted reply, and can send that reply after a ten-minute hold once every safety check passes.",
+    details: {
+      overview:
+        "AutoMailing monitors a job-application inbox and classifies each email with an LLM. Interview and assessment " +
+        "invites are forwarded immediately with a drafted reply; if no manual reply is sent within ten minutes, the draft " +
+        "can be sent automatically, but only when every safety gate passes. It also tracks each application from " +
+        "receipt to offer, rejection or no response.",
+      sections: [
+        {
+          title: "What it does",
+          items: [
+            "Polls several IMAP folders every minute, de-duplicates by Message-ID and never marks mail as read.",
+            "Sorts mail into receipts, rejections, follow-ups and offers with an LLM, using strict JSON output.",
+            "Forwards urgent mail to Gmail with a summary, a British English draft, the planned send time and a cancel link.",
+            "Counts applications, marks them as ghosted after 30 days of silence, and charts it all on a dashboard.",
+          ],
+        },
+      ],
+      stack: ["n8n", "Python", "FastAPI", "PostgreSQL 17", "OpenAI Responses API", "IMAP / SMTP", "Docker", "Cloudflare Tunnel"],
+      morePages: [
+        {
+          label: "Safety",
+          sections: [
+            {
+              title: "Safety gates",
+              items: [
+                "Eleven gates before any auto-reply, including email-only actions, passing SPF, DKIM and DMARC, no scam or prompt-injection flags, and only facts from the stored profile.",
+                "Just before sending it re-reads the Sent folder and stands down if a manual reply has already been sent or the sender has written again.",
+                "At most one auto-reply per thread and ten a day, only between 08:00 and 21:00 Perth time. Offers are never answered automatically.",
+                "One-time codes never reach the model, links are cut down to their domains, and email text is treated as untrusted data.",
+              ],
+            },
+            {
+              title: "How it runs",
+              items: [
+                "n8n runs the schedules and alerts, a FastAPI service holds the logic, and PostgreSQL keeps the state, all in Docker behind a Cloudflare Tunnel.",
+                "A shadow mode runs the whole pipeline without replying. 52 automated tests and a live regression set check every change.",
+                "Nightly backups are encrypted with GPG and stored off the server.",
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     name: "AI Study Planner",
     kind: "University capstone project",
     period: "2026",
